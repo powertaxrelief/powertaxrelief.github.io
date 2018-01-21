@@ -9,14 +9,16 @@ div.wrapper {
 }
 a {
     color:  black;
+    text-decoration:  none;
 }
 
-a:  link {
+a:link {
     color:  black;
 }
 
 a:hover {
     font-weight:  bold;
+    color:  #708090;
 }
 
 div.header {
@@ -42,7 +44,6 @@ div.navbar {
 
     grid-column-start:  3;
     grid-column-end:  9;
-    background-color:  white;
     text-align:  center;
     font-size:  .95em;
     grid-row:  3;
@@ -132,4 +133,50 @@ div.thirdimagetext {
     border-left-width:  1px;
     border-bottom-width:  1px;
     border-style:  solid;
+}
+
+a.footer:link {
+    
+    color:  white;
+}
+div.footer {
+    color:  white;
+    padding-top:  5%;
+    margin-top:  10%;
+    grid-column-start:  1;
+    grid-column-end:  11;
+    background-color: #708090; 
+    text-align:  center;
+    font-size:  .95em;
+    grid-row:  8;
+    word-spacing:  5em;
+    height:  80px;
+}
+
+div.projtext1 {
+    padding-left:  3%;
+    margin-top:  1%;
+    grid-column-start:  2;
+    grid-column-end:  6;
+    grid-row:  5;
+    border-top-width:  1px;
+    border-right-width:  0px;
+    border-left-width:  1px;
+    border-bottom-width:  1px;
+    border-style:  solid;
+    text-align:  center;
+}
+
+div.projimage1 {
+    margin-top:  1%;
+    grid-column-start:  6;
+    grid-column-end:  10;
+    grid-row:  5;
+    border-top-width:  1px;
+    border-right-width:  1px;
+    border-left-width:  0px;
+    border-bottom-width:  1px;
+    border-style:  solid;
+    text-align:  center;
+    overflow:  hidden;
 }
