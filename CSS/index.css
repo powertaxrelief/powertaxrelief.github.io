@@ -5,20 +5,15 @@ div.wrapper {
     min-height:  0;
     min-width:  0;
     font-family: 'DidactGothicMedium'; 
-    grid-template-rows:  auto auto auto auto 300px auto auto;
+    grid-template-rows:  auto auto 2em auto 300px auto auto;
 }
-a {
+.wrapper a {
     color:  black;
     text-decoration:  none;
 }
 
 a:link {
     color:  black;
-}
-
-a:hover {
-    font-weight:  bold;
-    color:  #708090;
 }
 
 div.header {
@@ -31,27 +26,143 @@ div.header {
 }
 
 div.line1 {
-    margin:  1%;
     border-top-style:  solid;
     border-top-width:  1px;
     grid-column-start:  1;
     grid-column-end:  11;
     border-top-color:  black;
     grid-row:  2;
+    margin-bottom:  0;
 }
-    
-div.navbar {
-
+div.Home {
+    padding:  .5em;
     grid-column-start:  3;
+    grid-column-end:  4;
+    text-align:  center;
+    font-size:  .95em;
+    grid-row:  3;
+    margin-top:  0;
+}
+
+.Home:hover {
+    text-align:  center;
+    background-color:  black;
+    font-size:  1.5em;
+    font-family:  'StationMedium';
+    padding:  .15em;
+    color:  white;
+}
+
+.Home a:hover {
+    color:  white;
+}
+div.Projects {
+    padding:  .5em;
+    grid-column-start:  4;
+    grid-column-end:  5;
+    text-align:  center;
+    font-size:  .95em;
+    grid-row:  3;
+}
+
+.Projects:hover {
+    text-align:  center;
+    background-color:  #062F4F;
+    font-size:  1.5em;
+    font-family:  'StationMedium';
+    padding:  .15em;
+    color:  white;
+}
+
+.Projects a:hover {
+    color:  white;
+}
+div.Github {
+    padding:  .5em;
+    grid-column-start:  5;
+    grid-column-end:  6;
+    text-align:  center;
+    font-size:  .95em;
+    grid-row:  3;
+}
+
+.Github:hover {
+    text-align:  center;
+    background-color:  #813772;
+    font-size:  1.5em;
+    font-family:  'StationMedium';
+    padding:  .15em;
+    color:  white;
+}
+
+.Github a:hover {
+    color:  white;
+}
+
+div.Contact {
+    padding:  .5em;
+    grid-column-start:  6;
+    grid-column-end:  7;
+    text-align:  center;
+    font-size:  .95em;
+    grid-row:  3;
+}
+.Contact:hover {
+    text-align:  center;
+    background-color:  #B82601;
+    font-size:  1.5em;
+    font-family:  'StationMedium';
+    padding:  .15em;
+    color:  white;
+}
+
+.Contact a:hover {
+    color:  white;
+}
+div.Archive {
+    padding:  .5em;
+    grid-column-start:  7;
+    grid-column-end:  8;
+    text-align:  center;
+    font-size:  .95em;
+    grid-row:  3;
+}
+
+.Archive:hover {
+    text-align:  center;
+    background-color:  #565656;
+    font-size:  1.5em;
+    font-family:  'StationMedium';
+    padding:  .15em;
+    color:  white;
+}
+
+.Archive a:hover {
+    color:  white;
+}
+div.Blog {
+    padding:  .5em;
+    grid-column-start:  8;
     grid-column-end:  9;
     text-align:  center;
     font-size:  .95em;
     grid-row:  3;
-    word-spacing:  5em;
     
 }
+.Blog:hover {
+    text-align:  center;
+    background-color:  #3CC47C;
+    font-size:  1.5em;
+    font-family:  'StationMedium';
+    padding:  .15em;
+    color:  white;
+}
+
+.Blog a:hover {
+    color:  white;
+}
 div.line2 {
-    margin:  1%;
+    margin-top:  0;
     border-top-style:  solid;
     border-top-width:  1px;
     grid-column-start:  1;
@@ -95,6 +206,11 @@ div.secondimage {
     border-right-width:  1px;
     border-bottom-width:  0px;
 }
+
+.secondimage:hover {
+    background-color:  #3CC47C;
+    
+}
 div.thirdimage {
     margin-top:  3%;
     margin-left:  3%;
@@ -135,10 +251,7 @@ div.thirdimagetext {
     border-style:  solid;
 }
 
-a.footer:link {
-    
-    color:  white;
-}
+
 div.footer {
     color:  white;
     padding-top:  5%;
@@ -152,7 +265,9 @@ div.footer {
     word-spacing:  5em;
     height:  80px;
 }
-
+#footer a:link {
+    color:  white;
+}
 div.projtext1 {
     padding-left:  3%;
     margin-top:  1%;
