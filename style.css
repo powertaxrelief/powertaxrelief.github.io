@@ -53,6 +53,15 @@ div.topheader {
   font-family: Draconis, sans-serif;
 
 }
+
+div.gerome {
+  font-weight:  bold;
+  color: #c93c3c;
+  text-align:  center;
+  font-size:  4.5em;
+  font-family: Draconis, sans-serif;
+
+}
 input[type="checkbox"] {
   cursor: pointer;
 }
