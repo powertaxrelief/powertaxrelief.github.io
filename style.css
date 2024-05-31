@@ -54,7 +54,7 @@ div.topheader {
 
 }
 
-div.gerome {
+div.gerome, div.gerome a:link, div.gerome, div.gerome a:visited {
   font-weight:  bold;
   color: #c93c3c;
   text-align:  center;
