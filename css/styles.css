@@ -1,0 +1,33 @@
+
+
+
+#grid-container {
+    display: grid;
+    grid-template-columns: 1fr;;
+    grid-template-areas:
+    "header"
+    "nav"
+    "main"
+    "footer";
+}
+
+
+#header {
+    grid-area: header;
+    width: 90vw;
+}
+
+#main {
+    grid-area: main;
+    width: 90vw;
+}
+
+#nav {
+    grid-area: nav;
+    width: 90vw;
+}
+
+#footer {
+    grid-area: footer;
+    width: 90vw;
+}

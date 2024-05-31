@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html class = "dark" lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Spell Book Collapsible</title>
+        <link rel="stylesheet" href="./css/styles.css"/>
+        <link rel="stylesheet" href="https://unpkg.com/papercss@1.9.2/dist/paper.min.css"/>    
+    </head>
+
+    <body class="paper" id="grid-container">
+        <header id="header">    
+            <h1>Gerome's Gnomish Spell Book</h1>
+        </header>
+
+        <main id="main">
+            <div class="row" id="spellList"></div>
+        </main>
+
+        <nav id="nav">
+            
+            <div id="searchBar">
+                <input type="text" placeholder="Search" id="txtSearch" onkeyup="searchSpells()"></div>
+            <div id="navList"></div>
+        </nav>
+
+        <footer id="footer">
+        </footer>
+        <script src="js/app.js"></script>
+        <script src="data/spells.js"></script>
+    </body>
+</html>
