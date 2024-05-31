@@ -54,14 +54,22 @@ div.topheader {
 
 }
 
-div.gerome, div.gerome a:link, div.gerome, div.gerome a:visited {
+div.gerome {
   font-weight:  bold;
   color: #c93c3c;
   text-align:  center;
   font-size:  20px;
   font-family: Draconis, sans-serif;
-
 }
+
+a:link, a:visited {
+  font-weight:  bold;
+  color: #c93c3c;
+  text-align:  center;
+  font-size:  20px;
+  font-family: Draconis, sans-serif;
+}
+
 input[type="checkbox"] {
   cursor: pointer;
 }
