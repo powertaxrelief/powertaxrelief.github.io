@@ -19,6 +19,15 @@
         <button name="buttonrest" type="button" onclick="long_rest()" style="width:100px;,margin-bottom:5px;margin-left:30px;">Long Rest</button>
         <label for="autosave" style="text-transform:Capitalize;font-weight:bold;padding:0px 10px;">Autosave?</label><input name="autosave" id="autosave" type="checkbox" />
     </section>
+    <section class="cloudsync" style="margin-top:5px;">
+        <span id="cloud-status" style="margin-right:10px;">Not signed in</span>
+        <button id="btn-google-signin" type="button">Sign in with Google</button>
+        <button id="btn-signout" type="button" style="display:none;">Sign out</button>
+        <select id="cloud-character-select" style="display:none;margin-left:10px;"></select>
+        <button id="btn-new-character" type="button" style="display:none;">New Character</button>
+        <button id="btn-save-cloud" type="button" style="display:none;">Save Now</button>
+        <button id="btn-delete-cloud" type="button" style="display:none;">Delete</button>
+    </section>
   </header>
   <div class="topheader">From Beyond<br></div><div class="gerome"><a href="https://powertaxrelief.github.io/gerome.html">Gerome's Spellbook</a></div>
   <header>
@@ -816,6 +825,8 @@
 <!-- partial -->
   <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
   <script  src="./script.js"></script>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/cloud-sync.js"></script>
 
 </body>
 </html>
