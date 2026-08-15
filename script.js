@@ -170,20 +170,8 @@ function save_character()
   }
 }
 
-// Protective autosave feature
-window.onbeforeunload = function(){
-  if ($("[name='autosave']").prop("checked") == true) {
-    save_character();
-  }
-}
-
 // Functions for reading character from disk
 function load_character(e) {
-
-  // Autosave character
-  if ($("[name='autosave']").prop("checked") == true) {
-    save_character();
-  }
 
   // Load character
   var file = e.target.files[0];

@@ -13,23 +13,20 @@
 <!-- partial:index.partial.html -->
 <form class="charsheet" id="charsheet">
   <header>
-    <section>
-        <button name="buttonsave" type="button" onclick="save_character()" style="width:100px;margin-bottom:5px;margin-right:30px;">Save Character</button>
-        <label for="buttonload" id="loadlabel" style="text-transform:Capitalize;">Load Character</label><input name="buttonload" id="buttonload" type="file" style="width:200px;margin-bottom:5px;" />
-        <button name="buttonrest" type="button" onclick="long_rest()" style="width:100px;,margin-bottom:5px;margin-left:30px;">Long Rest</button>
-        <label for="autosave" style="text-transform:Capitalize;font-weight:bold;padding:0px 10px;">Autosave?</label><input name="autosave" id="autosave" type="checkbox" />
-    </section>
-    <section class="cloudsync" style="margin-top:5px;">
-        <span id="cloud-status" style="margin-right:10px;">Not signed in</span>
-        <button id="btn-google-signin" type="button">Sign in with Google</button>
-        <button id="btn-signout" type="button" style="display:none;">Sign out</button>
-        <select id="cloud-character-select" style="display:none;margin-left:10px;"></select>
-        <button id="btn-new-character" type="button" style="display:none;">New Character</button>
-        <button id="btn-save-cloud" type="button" style="display:none;">Save Now</button>
-        <button id="btn-delete-cloud" type="button" style="display:none;">Delete</button>
+    <section class="toolbar">
+        <div class="toolbar-cloud">
+          <span id="cloud-status">Not signed in</span>
+          <button id="btn-google-signin" type="button" class="sheet-btn">Sign in with Google</button>
+          <button id="btn-signout" type="button" class="sheet-btn" style="display:none;">Sign out</button>
+          <select id="cloud-character-select" class="sheet-btn" style="display:none;">
+          </select>
+          <button id="btn-new-character" type="button" class="sheet-btn" style="display:none;">New Character</button>
+          <button id="btn-save-cloud" type="button" class="sheet-btn" style="display:none;">Save Now</button>
+          <button id="btn-delete-cloud" type="button" class="sheet-btn" style="display:none;">Delete</button>
+        </div>
     </section>
   </header>
-  <div class="topheader">From Beyond<br></div><div class="gerome"><a href="https://powertaxrelief.github.io/gerome.html">Gerome's Spellbook</a></div>
+  <div class="topheader">Dungeons &amp; Dragons<br></div><div class="gerome"><a href="https://powertaxrelief.github.io/gerome.html">Gerome's Spellbook</a></div>
   <header>
     <section class="charname">
       <label for="charname">Character Name</label><input name="charname" id="charname" placeholder="Character Name" />
@@ -249,7 +246,12 @@
           </div>
           </div>
         <div class="bonusmaxhp">
-            <label for="bonusmaxhp">Current Hit Points</label><input name="bonusmaxhp" placeholder="0" type="text" />
+            <div class="bonusmaxhp-hp">
+              <label for="bonusmaxhp">Current Hit Points</label><input name="bonusmaxhp" placeholder="0" type="text" />
+            </div>
+            <div class="bonusmaxhp-rest">
+              <label for="buttonrest">Long Rest</label><button name="buttonrest" id="buttonrest" type="button" onclick="long_rest()">Rest</button>
+            </div>
             </div>
         <div class="hitdice">
           <div>
@@ -819,6 +821,12 @@
     <input name="rows_inventory" type="hidden" value="2"/>
     <input name="rows_spells" type="hidden" value="2"/>
   </main>
+
+  <footer class="manualbackup">
+    <span class="manualbackup-label">Manual Backup</span>
+    <button name="buttonsave" type="button" class="sheet-btn" onclick="save_character()">Manual Export</button>
+    <label for="buttonload" id="loadlabel" class="sheet-btn">Manual Import</label><input name="buttonload" id="buttonload" type="file" style="display:none;" />
+  </footer>
 
 
 </form>

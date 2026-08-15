@@ -23,13 +23,63 @@ button {
   font-weight: bold;
 }
 
-#buttonload {
-  text-align: center;
-  border: 1px solid black;
-  font-size: 10px;
-  border-radius: 10px 10px 10px 10px;
-  padding: 4px 6px;
+/* Header action buttons (cloud sync) */
+form.charsheet header section.toolbar {
+  display: -webkit-box;
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  -webkit-box-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+          justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+form.charsheet header section.toolbar > div.toolbar-cloud {
+  display: -webkit-box;
+  display: flex;
+  flex-wrap: wrap;
+  -webkit-box-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+          justify-content: center;
+  gap: 8px;
+}
+.sheet-btn {
+  display: inline-block;
+  font-family: inherit;
+  font-size: 12px;
   font-weight: bold;
+  text-transform: none;
+  text-align: center;
+  color: #1a1a1a;
+  background-color: #fff7ec;
+  border: 1px solid #1a1a1a;
+  border-radius: 10px;
+  padding: 6px 14px;
+  margin: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.sheet-btn:hover {
+  background-color: #c93c3c;
+  border-color: #a12c2c;
+  color: #fff7ec;
+}
+.sheet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+select.sheet-btn {
+  padding: 5px 8px;
+  text-transform: none;
+}
+#cloud-status {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  color: #1a1a1a;
 }
 
 textarea {
@@ -46,7 +96,7 @@ textarea {
 }
 
 div.topheader {
-  font-weight:  bold;
+  font-weight:  normal;
   color: #c93c3c;
   text-align:  center;
   font-size:  4.5em;
@@ -565,16 +615,35 @@ form.charsheet main section.combat > div.hp > div.temporary label {
 form.charsheet main section.combat > div.bonusmaxhp {
   display: -webkit-box;
   display: flex;
+  -webkit-box-flex: 1;
+          flex: 1 1 100%;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+          flex-direction: row;
+  -webkit-box-align: end;
+  margin: 10px 2.5% 0 2.5%;
+  align-items: flex-end;
+  gap: 10px;
+}
+form.charsheet main section.combat > div.bonusmaxhp > div {
+  display: -webkit-box;
+  display: flex;
   -webkit-box-orient: vertical;
   -webkit-box-direction: reverse;
           flex-direction: column-reverse;
   -webkit-box-align: center;
-  margin-top: 10px;
-  align-items: center;
-
+          align-items: center;
+}
+form.charsheet main section.combat > div.bonusmaxhp > div.bonusmaxhp-hp {
+  -webkit-box-flex: 3;
+          flex: 3;
+}
+form.charsheet main section.combat > div.bonusmaxhp > div.bonusmaxhp-rest {
+  -webkit-box-flex: 1;
+          flex: 1;
 }
 form.charsheet main section.combat > div.bonusmaxhp input {
-  width: 95%;
+  width: 100%;
   border-radius: 15px 15px 15px 15px;
   border: 1px solid black;
   text-align: center;
@@ -598,6 +667,26 @@ form.charsheet main section.combat > div.bonusmaxhp label {
   padding-top: 5px;
   padding-left: 2px;
   padding-right: 2px;
+}
+
+form.charsheet main section.combat > div.bonusmaxhp > div.bonusmaxhp-rest button {
+  width: 100%;
+  height: 72px;
+  padding: 0;
+  border-radius: 15px;
+  border: 1px solid black;
+  background-color: #ffedd7;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #1a1a1a;
+  font-family: Draconis, sans-serif;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+form.charsheet main section.combat > div.bonusmaxhp > div.bonusmaxhp-rest button:hover {
+  background-color: #c93c3c;
+  color: #fff7ec;
 }
 
 form.charsheet main section.combat > div.hitdice, form.charsheet main section.combat > div.deathsaves {
@@ -950,7 +1039,24 @@ textarea {
   overflow-y: auto;
 }
 
-#loadlabel {
-  padding: 5px;
-  font-weight: bold;
+form.charsheet footer.manualbackup {
+  display: -webkit-box;
+  display: flex;
+  flex-wrap: wrap;
+  -webkit-box-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+          justify-content: center;
+  gap: 10px;
+  margin: 15px 0 5px 0;
+  padding: 10px 0;
+  border-top: 1px solid black;
 }
+form.charsheet footer.manualbackup .manualbackup-label {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #666;
+}
+
