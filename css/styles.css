@@ -1,33 +1,213 @@
+/* ==========================================================================
+   Gerome's Gnomish Spell Book
+   Themed to match the D&D character sheet (index.html):
+   parchment #ffedd7, red #c93c3c, black borders, Draconis display font.
+   ========================================================================== */
 
+:root {
+    --parchment: #ffedd7;
+    --parchment-panel: #fff7ec;
+    --ink: #1a1a1a;
+    --dragon-red: #c93c3c;
+    --dragon-red-dark: #a12c2c;
+}
 
+body.paper {
+    background-color: var(--parchment);
+    background-image: linear-gradient(rgba(255, 237, 215, 0.85), rgba(255, 237, 215, 0.85)),
+        url('https://i0.wp.com/growupandgame.com/wp-content/uploads/2017/11/questionable-arcana-calligraphers-supplies-featured.jpg?resize=863%2C610&ssl=1');
+    background-attachment: fixed;
+    background-size: cover;
+    color: var(--ink);
+}
 
 #grid-container {
     display: grid;
-    grid-template-columns: 1fr;;
+    grid-template-columns: 1fr;
     grid-template-areas:
-    "header"
-    "nav"
-    "main"
-    "footer";
+        "header"
+        "nav"
+        "main"
+        "footer";
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
 }
 
-
+/* ---- Header --------------------------------------------------------------- */
 #header {
     grid-area: header;
-    width: 90vw;
+    text-align: center;
+    border-bottom: 5px solid var(--ink);
+    margin-bottom: 20px;
+    padding-bottom: 6px;
 }
 
-#main {
-    grid-area: main;
-    width: 90vw;
+#header h1 {
+    font-family: Draconis, sans-serif;
+    color: var(--dragon-red);
+    font-size: 4em;
+    font-weight: normal;
+    margin: 10px 0 4px;
+    line-height: 1;
 }
 
+#header .backlink a,
+#header .backlink a:link,
+#header .backlink a:visited {
+    font-family: Draconis, sans-serif;
+    color: var(--dragon-red);
+    font-size: 20px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+#header .backlink a:hover {
+    color: var(--dragon-red-dark);
+    text-decoration: underline;
+}
+
+/* ---- Nav / filters -------------------------------------------------------- */
 #nav {
     grid-area: nav;
-    width: 90vw;
+    display: block; /* override PaperCSS, which flexes <nav> and collapses the search box */
+    background: var(--parchment-panel);
+    border: 1px solid var(--ink);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+#searchBar {
+    margin-bottom: 18px;
+}
+
+#searchBar input {
+    display: block;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+    border: 1px solid var(--ink);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 15px;
+    background-color: var(--parchment);
+    color: var(--ink);
+}
+
+.filterGroup {
+    margin-top: 14px;
+}
+
+.filterLabel {
+    display: block;
+    font-family: Draconis, sans-serif;
+    color: var(--dragon-red);
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+/* Button rows — neat, evenly-spaced, left-aligned wrap */
+#navList,
+#classList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Level buttons are single characters — keep them a uniform width */
+#navList button.filterBtn {
+    min-width: 42px;
+}
+
+/* Filter buttons — styled like the character-sheet buttons */
+button.filterBtn {
+    text-align: center;
+    border: 1px solid var(--ink);
+    background-color: var(--parchment);
+    color: var(--ink);
+    font-size: 13px;
+    border-radius: 10px;
+    padding: 5px 11px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.12s ease, color 0.12s ease;
+    box-shadow: none;
+    margin: 0;
+}
+
+button.filterBtn:hover {
+    background-color: #f4d9bd;
+}
+
+button.filterBtn.active {
+    background-color: var(--dragon-red);
+    color: #fff;
+    border-color: var(--dragon-red-dark);
+}
+
+/* ---- Main / spell list ---------------------------------------------------- */
+#main {
+    grid-area: main;
 }
 
 #footer {
     grid-area: footer;
-    width: 90vw;
+}
+
+.collapsible {
+    margin-bottom: 8px;
+}
+
+/* Collapsed spell title (PaperCSS collapsible label) */
+.collapsible > label {
+    display: block;
+    background-color: var(--parchment-panel);
+    border: 1px solid var(--ink);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.collapsible > label:hover {
+    background-color: var(--dragon-red);
+    color: #fff;
+}
+
+.collapsible > input:checked ~ label,
+.collapsible > label.active {
+    background-color: var(--dragon-red);
+    color: #fff;
+    border-radius: 10px 10px 0 0;
+}
+
+/* Expanded body */
+.collapsible-body {
+    border: 1px solid var(--ink);
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+    background-color: var(--parchment);
+    padding: 14px 16px;
+}
+
+.collapsible-body span > p {
+    margin: 0 0 8px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--ink);
+}
+
+/* First paragraph = level/school, styled as a subheading */
+.collapsible-body span > p:first-child {
+    font-family: Draconis, sans-serif;
+    color: var(--dragon-red);
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 10px;
 }
