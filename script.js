@@ -100,7 +100,7 @@ function cellNumber(value)
 function knownValue(className, level, column)
 {
   var row = classRow(className, level)
-  if (!row || !(column in row)) return null
+  if (!row || !(column in row) || row[column] === "-") return null
   return cellNumber(row[column])
 }
 
@@ -227,11 +227,41 @@ function serializeCharacterForm()
 }
 window.serializeCharacterForm = serializeCharacterForm;
 
+// Pre-rename saves stored "Class & Level" and "Multiclass" as single free-text
+// fields (e.g. "Wizard 5"). Splits those into the current class1/level1 and
+// class2/level2 fields so older saves don't silently lose class/level data.
+function parseLegacyClassLevel(text)
+{
+  var match = text.trim().match(/^(.*?)\s+(\d+)$/)
+  if (!match) return null
+  return { className: match[1].trim(), level: match[2] }
+}
+
+function migrateLegacyClassLevelFields(savedData)
+{
+  if (savedData.class1 === undefined && typeof savedData.classlevel === 'string' && savedData.classlevel.trim() !== '') {
+    var parsed1 = parseLegacyClassLevel(savedData.classlevel)
+    if (parsed1) {
+      savedData.class1 = parsed1.className
+      savedData.level1 = parsed1.level
+    }
+  }
+  if (savedData.class2 === undefined && typeof savedData.classlevel2 === 'string' && savedData.classlevel2.trim() !== '') {
+    var parsed2 = parseLegacyClassLevel(savedData.classlevel2)
+    if (parsed2) {
+      savedData.class2 = parsed2.className
+      savedData.level2 = parsed2.level
+    }
+  }
+}
+
 // Applies a previously-serialized character object (see serializeCharacterForm)
 // back onto the form, adjusting dynamic table row counts first. Used by both
 // the local file import and cloud sync.
 function applyCharacterData(savedData)
 {
+  migrateLegacyClassLevelFields(savedData)
+
   while (rows_attacks > parseInt(savedData.rows_attacks)) {
     remove_last_row('attacktable');
   }
