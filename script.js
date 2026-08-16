@@ -348,10 +348,12 @@ function updateSpellsAvailable()
     var preparedVal = preparedValue(c.name, c.level)
     var count = (knownVal === null ? 0 : knownVal) + (preparedVal === null ? 0 : preparedVal)
     // Prepared casters (Cleric/Druid/Paladin/Wizard): a spell occupying one
-    // of these rows is by definition one of the day's prepared spells, so
-    // new rows default to checked. Known casters (Bard/Ranger/Sorcerer/
-    // Warlock) don't have a "prepare from your list" mechanic — they just
-    // know a fixed spell — so this stays unchecked for them, as before.
+    // of these rows is by definition one of the day's prepared spells —
+    // there's no independent choice to track, so Prepared is forced
+    // checked+disabled, same as subclass bonus rows. Known casters (Bard/
+    // Ranger/Sorcerer/Warlock) don't have a "prepare from your list"
+    // mechanic — they just know a fixed spell — so this stays interactive
+    // (and unchecked by default) for them, as before.
     groups.push({ key: "s" + (idx + 1), kind: "spell-row-spell", className: c.name, count: count, defaultPrepChecked: c.name in PREPARED_CASTER_ABILITY })
   })
   syncSpellListRows(groups)
@@ -415,14 +417,19 @@ function escapeAttr(value)
 // are locked too, and Prepared is forced checked+disabled — PHB: "you
 // always have it prepared... doesn't count against the number of spells
 // you can prepare each day."
-function buildSpellRow(id, rowClasses, className, data, locked)
+// fieldsLocked: name/level/time/range/duration readonly (bonus rows only —
+// fully derived, not searched). prepLocked: Prepared forced checked+disabled
+// — bonus rows, and prepared-caster classes' regular rows (occupying the
+// row already means it's prepared; there's no independent choice to track).
+function buildSpellRow(id, rowClasses, className, data, fieldsLocked, prepLocked)
 {
   data = data || {}
-  var ro = locked ? " readonly" : ""
+  var ro = fieldsLocked ? " readonly" : ""
+  var checked = prepLocked ? true : data.prep
   var tr = document.createElement("tr")
   tr.className = rowClasses
   tr.innerHTML =
-    "<td><input name='spellprep" + id + "' type='checkbox'" + (data.prep ? " checked" : "") + (locked ? " disabled" : "") + " /></td>" +
+    "<td><input name='spellprep" + id + "' type='checkbox'" + (checked ? " checked" : "") + (prepLocked ? " disabled" : "") + " /></td>" +
     "<td><input name='spellname" + id + "' type='text' list='spellnames-datalist' value=\"" + escapeAttr(data.name) + "\"" + ro + " /></td>" +
     "<td><input name='spelllevel" + id + "' type='text' value=\"" + escapeAttr(data.level) + "\"" + ro + " /></td>" +
     "<td><input name='spellclass" + id + "' type='text' value=\"" + escapeAttr(className) + "\" readonly /></td>" +
@@ -458,14 +465,10 @@ function rebuildSpellList(groups)
   var id = 0
   groups.forEach(function(g) {
     var data = preserved[g.key]
-    var locked = g.kind === "spell-row-bonus"
+    var fieldsLocked = g.kind === "spell-row-bonus"
+    var prepLocked = fieldsLocked || g.defaultPrepChecked
     for (var i = 0; i < g.count; i++) {
-      // Newly-appearing rows (not previously on the sheet) default to
-      // Prepared checked for prepared-caster classes — occupying one of
-      // these rows already means it's one of that day's prepared spells.
-      // Existing rows keep whatever the user already set.
-      var rowData = data[i] || (g.defaultPrepChecked ? { prep: true } : undefined)
-      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, rowData, locked))
+      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, data[i], fieldsLocked, prepLocked))
     }
   })
 }
