@@ -40,7 +40,6 @@ form.charsheet header.app-topbar {
   border: 3px solid var(--ink);
   border-radius: 14px 14px 0 0;
   overflow: hidden;
-  background: var(--parchment-panel);
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -50,11 +49,6 @@ form.charsheet header.app-topbar {
   align-items: center;
   gap: 4px;
   padding: 26px 32px 20px;
-  background-color: var(--parchment);
-  background-image: linear-gradient(rgba(255, 237, 215, 0.85), rgba(255, 237, 215, 0.85)),
-    url('https://i0.wp.com/growupandgame.com/wp-content/uploads/2017/11/questionable-arcana-calligraphers-supplies-featured.jpg?resize=863%2C610&ssl=1');
-  background-size: cover;
-  background-position: center;
   border-bottom: 3px solid var(--ink);
 }
 .app-topbar .app-topbar__title {
@@ -82,7 +76,6 @@ form.charsheet header.app-topbar {
   row-gap: 8px;
   column-gap: 12px;
   padding: 12px 24px;
-  background: var(--parchment);
 }
 .app-topbar .app-topbar__account {
   display: flex;
