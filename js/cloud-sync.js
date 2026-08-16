@@ -19,13 +19,23 @@ let saveTimer = null;
 
 const el = {
   status: document.getElementById('cloud-status'),
+  avatar: document.getElementById('user-avatar'),
+  userName: document.getElementById('user-name'),
   signIn: document.getElementById('btn-google-signin'),
   signOut: document.getElementById('btn-signout'),
+  selectWrap: document.getElementById('character-select-wrap'),
   select: document.getElementById('cloud-character-select'),
   newChar: document.getElementById('btn-new-character'),
   saveNow: document.getElementById('btn-save-cloud'),
   del: document.getElementById('btn-delete-cloud'),
 };
+
+function initialsFor(name) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 function charactersCollection(uid) {
   return collection(db, 'users', uid, 'characters');
@@ -33,9 +43,12 @@ function charactersCollection(uid) {
 
 function setSignedOutUI() {
   el.status.textContent = 'Not signed in';
+  el.status.style.display = '';
+  el.avatar.style.display = 'none';
+  el.userName.style.display = 'none';
   el.signIn.style.display = '';
   el.signOut.style.display = 'none';
-  el.select.style.display = 'none';
+  el.selectWrap.style.display = 'none';
   el.newChar.style.display = 'none';
   el.saveNow.style.display = 'none';
   el.del.style.display = 'none';
@@ -45,10 +58,15 @@ function setSignedOutUI() {
 }
 
 function setSignedInUI() {
-  el.status.textContent = 'Signed in as ' + (currentUser.displayName || currentUser.email);
+  const name = currentUser.displayName || currentUser.email;
+  el.status.style.display = 'none';
+  el.avatar.textContent = initialsFor(name);
+  el.avatar.style.display = '';
+  el.userName.textContent = name;
+  el.userName.style.display = '';
   el.signIn.style.display = 'none';
   el.signOut.style.display = '';
-  el.select.style.display = '';
+  el.selectWrap.style.display = '';
   el.newChar.style.display = '';
   el.saveNow.style.display = '';
   el.del.style.display = '';
