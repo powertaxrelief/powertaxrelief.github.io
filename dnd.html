@@ -34,10 +34,16 @@
     <section class="misc">
       <ul>
         <li>
-          <label for="classlevel">Class & Level</label><input name="classlevel" placeholder="Class 1" />
+          <label for="class1">Class</label><input name="class1" id="class1" placeholder="Class" />
         </li>
         <li>
-          <label for="classlevel2">Multiclass</label><input name="classlevel2" placeholder="Multiclass" />
+          <label for="level1">Level</label><input name="level1" id="level1" placeholder="1" type="number" min="1" max="20" />
+        </li>
+        <li>
+          <label for="class2">Multiclass</label><input name="class2" id="class2" placeholder="Multiclass" />
+        </li>
+        <li>
+          <label for="level2">Multiclass Level</label><input name="level2" id="level2" placeholder="" type="number" min="1" max="19" />
         </li>
         <li>
           <label for="playername">Player Name</label><input name="playername" placeholder="Player Name">
@@ -397,46 +403,36 @@
   <header>
     <section class="attacksandspellcasting" id="spellslots">
       <div>
-        <label>Spell Slots</label>
+        <label>Spells Available</label>
         <table>
           <thead>
             <tr>
-              <th>Level</th>
-              <th>1</th>
-              <th>2</th>
-              <th>3</th>
-              <th>4</th>
-              <th>5</th>
-              <th>6</th>
-              <th>7</th>
-              <th>8</th>
-              <th>9</th>
+              <th>Spells Known</th>
+              <th>Cantrips Known</th>
+              <th>1st</th>
+              <th>2nd</th>
+              <th>3rd</th>
+              <th>4th</th>
+              <th>5th</th>
+              <th>6th</th>
+              <th>7th</th>
+              <th>8th</th>
+              <th>9th</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Cleric</td>
-              <td><input name="spellslots1" type="text" placeholder=""/></td>
-              <td><input name="spellslots2" type="text" placeholder=""/></td>
-              <td><input name="spellslots3" type="text" placeholder=""/></td>
-              <td><input name="spellslots4" type="text" placeholder=""/></td>
-              <td><input name="spellslots5" type="text" placeholder=""/></td>
-              <td><input name="spellslots6" type="text" placeholder=""/></td>
-              <td><input name="spellslots7" type="text" placeholder=""/></td>
-              <td><input name="spellslots8" type="text" placeholder=""/></td>
-              <td><input name="spellslots9" type="text" placeholder=""/></td>
-            </tr>
-            <tr>
-              <td>Druid</td>
-              <td><input name="spellslotsmax1" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax2" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax3" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax4" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax5" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax6" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax7" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax8" type="text" placeholder="0"/></td>
-              <td><input name="spellslotsmax9" type="text" placeholder="0"/></td>
+              <td><input name="spellsknown" type="text" placeholder="" readonly/></td>
+              <td><input name="cantripsknown" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax1" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax2" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax3" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax4" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax5" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax6" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax7" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax8" type="text" placeholder="" readonly/></td>
+              <td><input name="spellslotsmax9" type="text" placeholder="" readonly/></td>
             </tr>
           </tbody>
         </table>

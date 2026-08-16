@@ -26,31 +26,170 @@ $('.statmod').bind('change', function()
   
 })
 
-$("[name='classlevel']").bind('input', function()
-  {
-    var classes = $(this).val()
-    var r = new RegExp(/\d+/g)
-    var total = 0
-    var result
-    while ((result = r.exec(classes)) != null)
-    {
-      var lvl = parseInt(result)
-      if (!isNaN(lvl))
-        total += lvl
+function updateProficiencyBonus()
+{
+  var level1 = parseInt($("[name='level1']").val(), 10) || 0
+  var level2 = parseInt($("[name='level2']").val(), 10) || 0
+  var total = level1 + level2
+  var prof = ""
+  if (total > 0)
+    prof = "+" + (2 + Math.trunc((total - 1) / 4))
+  $("[name='proficiencybonus']").val(prof)
+}
+
+// ---- Spells available (Class/Level + Multiclass fields) ----
+// Data pulled from data/classes.json (PHB class tables). Multiclass slots
+// follow the standard multiclass spellcaster table; Warlock Pact Magic is
+// never blended into that table and is added on top of it, per the rules.
+var classesData = null
+
+var FULL_CASTERS = ["Bard", "Cleric", "Druid", "Sorcerer", "Wizard"]
+var HALF_CASTERS = ["Paladin", "Ranger"]
+var SLOT_COLUMNS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
+
+// PHB Multiclass Spellcaster table, indexed by effective caster level (1-20).
+var MULTICLASS_SLOTS = [
+  null,
+  [2,0,0,0,0,0,0,0,0], [3,0,0,0,0,0,0,0,0], [4,2,0,0,0,0,0,0,0], [4,3,0,0,0,0,0,0,0],
+  [4,3,2,0,0,0,0,0,0], [4,3,3,0,0,0,0,0,0], [4,3,3,1,0,0,0,0,0], [4,3,3,2,0,0,0,0,0],
+  [4,3,3,3,1,0,0,0,0], [4,3,3,3,2,0,0,0,0], [4,3,3,3,2,1,0,0,0], [4,3,3,3,2,1,0,0,0],
+  [4,3,3,3,2,1,1,0,0], [4,3,3,3,2,1,1,0,0], [4,3,3,3,2,1,1,1,0], [4,3,3,3,2,1,1,1,0],
+  [4,3,3,3,2,1,1,1,1], [4,3,3,3,3,1,1,1,1], [4,3,3,3,3,2,1,1,1], [4,3,3,3,3,2,2,1,1]
+]
+
+function loadClassesData()
+{
+  fetch('data/classes.json')
+    .then(function(res) { return res.json() })
+    .then(function(json) {
+      classesData = json
+      updateSpellsAvailable()
+    })
+    .catch(function(err) { console.error('Could not load data/classes.json:', err) })
+}
+
+function resolveClassName(input)
+{
+  if (!classesData || !input) return null
+  var target = input.trim().toLowerCase()
+  for (var key in classesData) {
+    if (key.toLowerCase() === target) return key
+  }
+  return null
+}
+
+function classRow(className, level)
+{
+  if (!classesData || !classesData[className] || level < 1) return null
+  var cf = classesData[className]["Class Features"]
+  var table = cf && cf["The " + className] && cf["The " + className].table
+  if (!table) return null
+  var row = {}
+  for (var col in table) {
+    row[col] = table[col][level - 1]
+  }
+  return row
+}
+
+function cellNumber(value)
+{
+  var n = parseInt(value, 10)
+  return isNaN(n) ? 0 : n
+}
+
+function knownValue(className, level, column)
+{
+  var row = classRow(className, level)
+  if (!row || !(column in row)) return null
+  return cellNumber(row[column])
+}
+
+function warlockSlots(level)
+{
+  var slots = [0,0,0,0,0,0,0,0,0]
+  var row = classRow("Warlock", level)
+  if (!row) return slots
+  var count = cellNumber(row["Spell Slots"])
+  var slotLevel = cellNumber(row["Slot Level"])
+  if (slotLevel >= 1 && slotLevel <= 9) slots[slotLevel - 1] = count
+  return slots
+}
+
+function singleClassSlots(className, level)
+{
+  if (className === "Warlock") return warlockSlots(level)
+  var row = classRow(className, level)
+  if (!row) return [0,0,0,0,0,0,0,0,0]
+  return SLOT_COLUMNS.map(function(col) { return cellNumber(row[col]) })
+}
+
+function updateSpellsAvailable()
+{
+  if (!classesData) return
+
+  var class1 = resolveClassName($("[name='class1']").val())
+  var level1 = parseInt($("[name='level1']").val(), 10) || 0
+  var class2 = resolveClassName($("[name='class2']").val())
+  var level2 = parseInt($("[name='level2']").val(), 10) || 0
+
+  var classes = []
+  if (class1 && level1 > 0) classes.push({ name: class1, level: level1 })
+  if (class2 && level2 > 0) classes.push({ name: class2, level: level2 })
+
+  var slots = [0,0,0,0,0,0,0,0,0]
+  var cantrips = null
+  var known = null
+
+  if (classes.length === 1) {
+    slots = singleClassSlots(classes[0].name, classes[0].level)
+    cantrips = knownValue(classes[0].name, classes[0].level, "Cantrips Known")
+    known = knownValue(classes[0].name, classes[0].level, "Spells Known")
+  } else if (classes.length === 2) {
+    var effectiveLevel = 0
+    var hasEffective = false
+    var cantripsTotal = 0, cantripsFound = false
+    var knownTotal = 0, knownFound = false
+
+    classes.forEach(function(c) {
+      if (FULL_CASTERS.indexOf(c.name) !== -1) {
+        effectiveLevel += c.level
+        hasEffective = true
+      } else if (HALF_CASTERS.indexOf(c.name) !== -1) {
+        effectiveLevel += Math.floor(c.level / 2)
+        hasEffective = true
+      } else if (c.name === "Warlock") {
+        var w = warlockSlots(c.level)
+        slots = slots.map(function(v, i) { return v + w[i] })
+      }
+
+      var cKnown = knownValue(c.name, c.level, "Cantrips Known")
+      if (cKnown !== null) { cantripsTotal += cKnown; cantripsFound = true }
+      var sKnown = knownValue(c.name, c.level, "Spells Known")
+      if (sKnown !== null) { knownTotal += sKnown; knownFound = true }
+    })
+
+    if (hasEffective && effectiveLevel >= 1) {
+      var row = MULTICLASS_SLOTS[Math.min(effectiveLevel, 20)]
+      slots = slots.map(function(v, i) { return v + row[i] })
     }
-    var prof = 2
-    if (total > 0)
-    {
-      total -= 1
-      prof += Math.trunc(total/4)
-      prof = "+" + prof
-    }
-    else
-    {
-      prof = ""    
-    }
-    $("[name='proficiencybonus']").val(prof)
-  })
+
+    cantrips = cantripsFound ? cantripsTotal : null
+    known = knownFound ? knownTotal : null
+  }
+
+  $("[name='cantripsknown']").val(cantrips === null ? "" : cantrips)
+  $("[name='spellsknown']").val(known === null ? "" : known)
+  for (var i = 0; i < 9; i++) {
+    $("[name='spellslotsmax" + (i + 1) + "']").val(slots[i] === 0 ? "" : slots[i])
+  }
+}
+
+$("[name='class1'], [name='level1'], [name='class2'], [name='level2']").bind('input change', function() {
+  updateProficiencyBonus()
+  updateSpellsAvailable()
+})
+
+loadClassesData()
 
 function totalhd_clicked()
 {
@@ -135,6 +274,9 @@ function applyCharacterData(savedData)
       }
     }
   }
+
+  updateProficiencyBonus();
+  updateSpellsAvailable();
 }
 window.applyCharacterData = applyCharacterData;
 
