@@ -347,7 +347,12 @@ function updateSpellsAvailable()
     var knownVal = knownValue(c.name, c.level, "Spells Known")
     var preparedVal = preparedValue(c.name, c.level)
     var count = (knownVal === null ? 0 : knownVal) + (preparedVal === null ? 0 : preparedVal)
-    groups.push({ key: "s" + (idx + 1), kind: "spell-row-spell", className: c.name, count: count })
+    // Prepared casters (Cleric/Druid/Paladin/Wizard): a spell occupying one
+    // of these rows is by definition one of the day's prepared spells, so
+    // new rows default to checked. Known casters (Bard/Ranger/Sorcerer/
+    // Warlock) don't have a "prepare from your list" mechanic — they just
+    // know a fixed spell — so this stays unchecked for them, as before.
+    groups.push({ key: "s" + (idx + 1), kind: "spell-row-spell", className: c.name, count: count, defaultPrepChecked: c.name in PREPARED_CASTER_ABILITY })
   })
   syncSpellListRows(groups)
 }
@@ -433,12 +438,19 @@ function buildSpellRow(id, rowClasses, className, data, locked)
 // specific (class, row-type) group. Groups with a precomputed `rows` array
 // (subclass bonus spells) are fully derived, so they're rebuilt fresh every
 // time rather than preserved/truncated from prior DOM content.
+var lastSpellGroupClassName = {}
 function rebuildSpellList(groups)
 {
   var preserved = {}
   groups.forEach(function(g) {
-    preserved[g.key] = g.rows ? g.rows.slice() : collectSpellRowData(g.key)
+    // A group key (e.g. "s1") is reused across whatever class currently
+    // occupies that slot. If the class itself changed (not just its level
+    // or ability scores), the old rows — including checkbox state — belong
+    // to a different class's spell list and shouldn't carry over.
+    var classChanged = lastSpellGroupClassName[g.key] !== undefined && lastSpellGroupClassName[g.key] !== g.className
+    preserved[g.key] = g.rows ? g.rows.slice() : (classChanged ? [] : collectSpellRowData(g.key))
     if (!g.rows) preserved[g.key].length = g.count
+    lastSpellGroupClassName[g.key] = g.className
   })
 
   var tbody = document.getElementById("spelltable")
@@ -448,7 +460,12 @@ function rebuildSpellList(groups)
     var data = preserved[g.key]
     var locked = g.kind === "spell-row-bonus"
     for (var i = 0; i < g.count; i++) {
-      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, data[i], locked))
+      // Newly-appearing rows (not previously on the sheet) default to
+      // Prepared checked for prepared-caster classes — occupying one of
+      // these rows already means it's one of that day's prepared spells.
+      // Existing rows keep whatever the user already set.
+      var rowData = data[i] || (g.defaultPrepChecked ? { prep: true } : undefined)
+      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, rowData, locked))
     }
   })
 }
