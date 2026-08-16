@@ -220,7 +220,22 @@ function updateSpellsAvailable()
     $("[name='spellslotsmax" + (i + 1) + "']").val(slots[i] === 0 ? "" : slots[i])
   }
 
-  syncSpellListRows(cantrips === null ? 0 : cantrips, (known === null ? 0 : known) + (prepared === null ? 0 : prepared))
+  // Spell list rows, split per class (PHB p.164: spells known/prepared are
+  // tracked separately per class) — cantrip rows for each class first, then
+  // spell rows for each class, so a Cleric 9/Druid 2 shows which prepared
+  // spells come from being a Cleric vs. a Druid.
+  var groups = []
+  classes.forEach(function(c, idx) {
+    var cantripVal = knownValue(c.name, c.level, "Cantrips Known")
+    groups.push({ key: "c" + (idx + 1), kind: "spell-row-cantrip", className: c.name, count: cantripVal === null ? 0 : cantripVal })
+  })
+  classes.forEach(function(c, idx) {
+    var knownVal = knownValue(c.name, c.level, "Spells Known")
+    var preparedVal = preparedValue(c.name, c.level)
+    var count = (knownVal === null ? 0 : knownVal) + (preparedVal === null ? 0 : preparedVal)
+    groups.push({ key: "s" + (idx + 1), kind: "spell-row-spell", className: c.name, count: count })
+  })
+  syncSpellListRows(groups)
 }
 
 $("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wisdomscore'], [name='Charismascore'], [name='Intelligencescore']").bind('input change', function() {
@@ -251,16 +266,15 @@ function buildSpellDatalist()
 }
 buildSpellDatalist()
 
-function collectSpellRowData(rowClass)
+function collectSpellRowData(groupKey)
 {
   var rows = []
-  $("#spelltable tr." + rowClass).each(function() {
+  $("#spelltable tr.spell-group-" + groupKey).each(function() {
     var $tr = $(this)
     rows.push({
       prep: $tr.find("input[name^='spellprep']").prop("checked"),
       name: $tr.find("input[name^='spellname']").val(),
       level: $tr.find("input[name^='spelllevel']").val(),
-      source: $tr.find("input[name^='spellsource']").val(),
       attacksave: $tr.find("input[name^='spellattacksave']").val(),
       time: $tr.find("input[name^='spelltime']").val(),
       range: $tr.find("input[name^='spellrange']").val(),
@@ -275,16 +289,19 @@ function escapeAttr(value)
   return String(value == null ? "" : value).replace(/"/g, "&quot;")
 }
 
-function buildSpellRow(id, rowClass, data)
+// className is structural (which class this row's spell slot belongs to,
+// set from the class/level fields) rather than spell data, so it's readonly
+// and untouched by the spellnames-datalist autofill below.
+function buildSpellRow(id, rowClasses, className, data)
 {
   data = data || {}
   var tr = document.createElement("tr")
-  tr.className = rowClass
+  tr.className = rowClasses
   tr.innerHTML =
     "<td><input name='spellprep" + id + "' type='checkbox'" + (data.prep ? " checked" : "") + " /></td>" +
     "<td><input name='spellname" + id + "' type='text' list='spellnames-datalist' value=\"" + escapeAttr(data.name) + "\" /></td>" +
     "<td><input name='spelllevel" + id + "' type='text' value=\"" + escapeAttr(data.level) + "\" /></td>" +
-    "<td><input name='spellsource" + id + "' type='text' value=\"" + escapeAttr(data.source) + "\" /></td>" +
+    "<td><input name='spellclass" + id + "' type='text' value=\"" + escapeAttr(className) + "\" readonly /></td>" +
     "<td><input name='spellattacksave" + id + "' type='text' value=\"" + escapeAttr(data.attacksave) + "\" /></td>" +
     "<td><input name='spelltime" + id + "' type='text' value=\"" + escapeAttr(data.time) + "\" /></td>" +
     "<td><input name='spellrange" + id + "' type='text' value=\"" + escapeAttr(data.range) + "\" /></td>" +
@@ -292,41 +309,43 @@ function buildSpellRow(id, rowClass, data)
   return tr
 }
 
-function rebuildSpellList(cantripCount, spellCount)
+// groups: [{ key, kind ("spell-row-cantrip"/"spell-row-spell"), className, count }, ...]
+// in display order. kind drives the blue/red styling; key scopes data
+// preservation and resizing to that specific (class, cantrip/spell) group.
+function rebuildSpellList(groups)
 {
-  var cantripData = collectSpellRowData("spell-row-cantrip")
-  var spellData = collectSpellRowData("spell-row-spell")
-  cantripData.length = cantripCount
-  spellData.length = spellCount
+  var preserved = {}
+  groups.forEach(function(g) { preserved[g.key] = collectSpellRowData(g.key) })
 
   var tbody = document.getElementById("spelltable")
   tbody.innerHTML = ""
   var id = 0
-  for (var i = 0; i < cantripCount; i++) {
-    tbody.appendChild(buildSpellRow(id++, "spell-row-cantrip", cantripData[i]))
-  }
-  for (var j = 0; j < spellCount; j++) {
-    tbody.appendChild(buildSpellRow(id++, "spell-row-spell", spellData[j]))
-  }
+  groups.forEach(function(g) {
+    var data = preserved[g.key]
+    data.length = g.count
+    for (var i = 0; i < g.count; i++) {
+      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, data[i]))
+    }
+  })
 }
 
-function syncSpellListRows(cantripCount, spellCount)
+var lastSpellGroupsSignature = null
+function syncSpellListRows(groups)
 {
-  var currentCantrips = $("#spelltable tr.spell-row-cantrip").length
-  var currentSpells = $("#spelltable tr.spell-row-spell").length
-  if (cantripCount === currentCantrips && spellCount === currentSpells) return
-  rebuildSpellList(cantripCount, spellCount)
+  var signature = groups.map(function(g) { return g.key + ":" + g.className + ":" + g.count }).join("|")
+  if (signature === lastSpellGroupsSignature) return
+  lastSpellGroupsSignature = signature
+  rebuildSpellList(groups)
 }
 
-// Autofill Level/Source/Cast Time/Range/Duration from data/spells.js when a
-// row's spell name matches. Attack/Save has no equivalent field in that
-// dataset, so it stays manual. Delegated since rows are rebuilt dynamically.
+// Autofill Level/Cast Time/Range/Duration from data/spells.js when a row's
+// spell name matches. Attack/Save has no equivalent field in that dataset,
+// so it stays manual. Delegated since rows are rebuilt dynamically.
 $("#spelltable").on("input", "input[list='spellnames-datalist']", function() {
   var spell = SPELLS_BY_NAME[this.value.trim().toLowerCase()]
   if (!spell) return
   var id = this.name.replace("spellname", "")
   $("[name='spelllevel" + id + "']").val(spell["Level"])
-  $("[name='spellsource" + id + "']").val(spell["Source"])
   $("[name='spelltime" + id + "']").val(spell["Casting Time"])
   $("[name='spellrange" + id + "']").val(spell["Range"])
   $("[name='spellduration" + id + "']").val(spell["Duration"])
