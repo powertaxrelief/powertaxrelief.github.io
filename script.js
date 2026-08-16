@@ -466,7 +466,10 @@ function rebuildSpellList(groups)
   groups.forEach(function(g) {
     var data = preserved[g.key]
     var fieldsLocked = g.kind === "spell-row-bonus"
-    var prepLocked = fieldsLocked || g.defaultPrepChecked
+    // Cantrips don't require daily preparation for any class — they're
+    // simply always known/castable — so they're locked checked the same
+    // way prepared-caster spells and subclass bonus spells are.
+    var prepLocked = fieldsLocked || g.defaultPrepChecked || g.kind === "spell-row-cantrip"
     for (var i = 0; i < g.count; i++) {
       tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, data[i], fieldsLocked, prepLocked))
     }
