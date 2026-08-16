@@ -47,6 +47,25 @@ var FULL_CASTERS = ["Bard", "Cleric", "Druid", "Sorcerer", "Wizard"]
 var HALF_CASTERS = ["Paladin", "Ranger"]
 var SLOT_COLUMNS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th"]
 
+// Prepared casters (PHB): spells prepared is a formula, not a table lookup —
+// ability modifier + class level (Paladin uses half level, rounded down).
+// Cleric p.58, Druid p.66, Paladin p.85, Wizard p.114.
+var PREPARED_CASTER_ABILITY = { Cleric: "Wisdom", Druid: "Wisdom", Paladin: "Charisma", Wizard: "Intelligence" }
+
+function abilityModifier(abilityName)
+{
+  var mod = parseInt($("[name='" + abilityName + "mod']").val(), 10)
+  return isNaN(mod) ? 0 : mod
+}
+
+function preparedValue(className, level)
+{
+  var ability = PREPARED_CASTER_ABILITY[className]
+  if (!ability || level < 1) return null
+  var levelPart = className === "Paladin" ? Math.floor(level / 2) : level
+  return Math.max(1, abilityModifier(ability) + levelPart)
+}
+
 // PHB Multiclass Spellcaster table, indexed by effective caster level (1-20).
 var MULTICLASS_SLOTS = [
   null,
@@ -139,16 +158,19 @@ function updateSpellsAvailable()
   var slots = [0,0,0,0,0,0,0,0,0]
   var cantrips = null
   var known = null
+  var prepared = null
 
   if (classes.length === 1) {
     slots = singleClassSlots(classes[0].name, classes[0].level)
     cantrips = knownValue(classes[0].name, classes[0].level, "Cantrips Known")
     known = knownValue(classes[0].name, classes[0].level, "Spells Known")
+    prepared = preparedValue(classes[0].name, classes[0].level)
   } else if (classes.length === 2) {
     var effectiveLevel = 0
     var hasEffective = false
     var cantripsTotal = 0, cantripsFound = false
     var knownTotal = 0, knownFound = false
+    var preparedTotal = 0, preparedFound = false
 
     classes.forEach(function(c) {
       if (FULL_CASTERS.indexOf(c.name) !== -1) {
@@ -166,6 +188,8 @@ function updateSpellsAvailable()
       if (cKnown !== null) { cantripsTotal += cKnown; cantripsFound = true }
       var sKnown = knownValue(c.name, c.level, "Spells Known")
       if (sKnown !== null) { knownTotal += sKnown; knownFound = true }
+      var sPrepared = preparedValue(c.name, c.level)
+      if (sPrepared !== null) { preparedTotal += sPrepared; preparedFound = true }
     })
 
     if (hasEffective && effectiveLevel >= 1) {
@@ -175,16 +199,19 @@ function updateSpellsAvailable()
 
     cantrips = cantripsFound ? cantripsTotal : null
     known = knownFound ? knownTotal : null
+    prepared = preparedFound ? preparedTotal : null
   }
 
   $("[name='cantripsknown']").val(cantrips === null ? "" : cantrips)
   $("[name='spellsknown']").val(known === null ? "" : known)
+  $("[name='spellsprepared']").val(prepared === null ? "" : prepared)
+  $("#spellspreparedcol, #spellspreparedcell").css("display", prepared === null ? "none" : "")
   for (var i = 0; i < 9; i++) {
     $("[name='spellslotsmax" + (i + 1) + "']").val(slots[i] === 0 ? "" : slots[i])
   }
 }
 
-$("[name='class1'], [name='level1'], [name='class2'], [name='level2']").bind('input change', function() {
+$("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wisdomscore'], [name='Charismascore'], [name='Intelligencescore']").bind('input change', function() {
   updateProficiencyBonus()
   updateSpellsAvailable()
 })
