@@ -1051,6 +1051,126 @@
                 "Blessed Healer": "Beginning at 6th level, the healing spells you cast on others heal you as well. When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell’s level.",
                 "Divine Strike": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8.",
                 "Supreme Healing": "Starting at 17th level, when you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of restoring 2d6 hit points to a creature, you restore 12."
+            },
+            "Knowledge Domain": {
+                "Knowledge Domain Spells": {
+                    "table": {
+                        "Cleric Level": [
+                            "1st",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "command, identify",
+                            "augury, suggestion",
+                            "nondetection, speak with dead",
+                            "arcane eye, confusion",
+                            "legend lore, scrying"
+                        ]
+                    }
+                }
+            },
+            "Light Domain": {
+                "Light Domain Spells": {
+                    "table": {
+                        "Cleric Level": [
+                            "1st",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "burning hands, faerie fire",
+                            "flaming sphere, scorching ray",
+                            "daylight, fireball",
+                            "guardian of faith, wall of fire",
+                            "flame strike, scrying"
+                        ]
+                    }
+                }
+            },
+            "Nature Domain": {
+                "Nature Domain Spells": {
+                    "table": {
+                        "Cleric Level": [
+                            "1st",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "animal friendship, speak with animals",
+                            "barkskin, spike growth",
+                            "plant growth, wind wall",
+                            "dominate beast, grasping vine",
+                            "insect plague, tree stride"
+                        ]
+                    }
+                }
+            },
+            "Tempest Domain": {
+                "Tempest Domain Spells": {
+                    "table": {
+                        "Cleric Level": [
+                            "1st",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "fog cloud, thunderwave",
+                            "gust of wind, shatter",
+                            "call lightning, sleet storm",
+                            "control water, ice storm",
+                            "destructive wave, insect plague"
+                        ]
+                    }
+                }
+            },
+            "Trickery Domain": {
+                "Trickery Domain Spells": {
+                    "table": {
+                        "Cleric Level": [
+                            "1st",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "charm person, disguise self",
+                            "mirror image, pass without trace",
+                            "blink, dispel magic",
+                            "dimension door, polymorph",
+                            "dominate person, modify memory"
+                        ]
+                    }
+                }
+            },
+            "War Domain": {
+                "War Domain Spells": {
+                    "table": {
+                        "Cleric Level": [
+                            "1st",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "divine favor, shield of faith",
+                            "magic weapon, spiritual weapon",
+                            "crusader's mantle, spirit guardians",
+                            "freedom of movement, stoneskin",
+                            "flame strike, hold monster"
+                        ]
+                    }
+                }
             }
         }
     },
@@ -2354,6 +2474,50 @@
                         "In addition, for the duration, you have advantage on saving throws against spells cast by fiends or undead.",
                         "Once you use this feature, you can’t use it again until you finish a long rest."
                     ]
+                }
+            },
+            "Oath of the Ancients": {
+                "Oath Spells": {
+                    "Oath of the Ancients Spells": {
+                        "table": {
+                            "Level": [
+                                "3rd",
+                                "5th",
+                                "9th",
+                                "13th",
+                                "17th"
+                            ],
+                            "Paladin Spells": [
+                                "ensnaring strike, speak with animals",
+                                "moonbeam, misty step",
+                                "plant growth, protection from energy",
+                                "ice storm, stoneskin",
+                                "commune with nature, tree stride"
+                            ]
+                        }
+                    }
+                }
+            },
+            "Oath of Vengeance": {
+                "Oath Spells": {
+                    "Oath of Vengeance Spells": {
+                        "table": {
+                            "Level": [
+                                "3rd",
+                                "5th",
+                                "9th",
+                                "13th",
+                                "17th"
+                            ],
+                            "Paladin Spells": [
+                                "bane, hunter's mark",
+                                "hold person, misty step",
+                                "haste, protection from energy",
+                                "banishment, dimension door",
+                                "hold monster, scrying"
+                            ]
+                        }
+                    }
                 }
             },
             "Breaking Your Oath": {

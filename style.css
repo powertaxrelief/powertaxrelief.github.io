@@ -972,6 +972,16 @@ form.charsheet header section.attacksandspellcasting > div > table input {
 form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-cantrip input {
   background-color: #6c9ee0;
 }
+/* Bonus/always-prepared rows (domain/oath/circle spells): same
+   lightness/saturation, rotated to green. Locked fields (readonly/disabled)
+   use a slightly dimmer text color so they read as system-managed. */
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-bonus input {
+  background-color: #6ce07f;
+}
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-bonus input:read-only,
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-bonus input:disabled {
+  color: #333;
+}
 form.charsheet header section.attacksandspellcasting > div textarea {
   border: 0;
   height: 10em;

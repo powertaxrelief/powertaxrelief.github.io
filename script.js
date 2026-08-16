@@ -148,8 +148,114 @@ function singleClassSlots(className, level)
   return SLOT_COLUMNS.map(function(col) { return cellNumber(row[col]) })
 }
 
+// ---- Subclass-granted bonus spells (always prepared, don't count against
+// Spells Known/Prepared) ----
+// Only classes/subclasses with a PHB spell table already in classes.json:
+// Cleric Divine Domain (58-63), Paladin Sacred Oath (86-92), Druid Circle
+// of the Land (68-69, by terrain). Warlock patrons don't grant automatic
+// spells in the core PHB (that's a Xanathar's-only mechanic), so Warlock
+// is intentionally not included.
+var SUBCLASS_CHOICES = {
+  Cleric: ["Knowledge", "Life", "Light", "Nature", "Tempest", "Trickery", "War"],
+  Paladin: ["Devotion", "the Ancients", "Vengeance"],
+  Druid: ["Arctic", "Coast", "Desert", "Forest", "Grassland", "Mountain", "Swamp"]
+}
+
+function updateSubclassOptions()
+{
+  var class1 = resolveClassName($("[name='class1']").val())
+  var class2 = resolveClassName($("[name='class2']").val())
+  ;[{ slot: 1, className: class1 }, { slot: 2, className: class2 }].forEach(function(entry) {
+    var wrap = $("#subclass" + entry.slot + "wrap")
+    var label = $("#subclass" + entry.slot + "label")
+    var select = $("[name='subclass" + entry.slot + "']")
+    var choices = SUBCLASS_CHOICES[entry.className]
+    if (!choices) {
+      wrap.css("display", "none")
+      return
+    }
+    if (select.data("builtFor") !== entry.className) {
+      var current = select.val()
+      var options = "<option value=''>-- select --</option>" + choices.map(function(c) {
+        return "<option value='" + c + "'>" + c + "</option>"
+      }).join("")
+      select.html(options)
+      select.data("builtFor", entry.className)
+      select.val(current && choices.indexOf(current) !== -1 ? current : "")
+      var labelText = entry.className === "Cleric" ? "Divine Domain"
+        : entry.className === "Paladin" ? "Sacred Oath"
+        : "Circle of the Land Terrain"
+      label.text((entry.slot === 2 ? "Multiclass " : "") + labelText)
+    }
+    wrap.css("display", "")
+  })
+}
+
+// Returns the raw PHB table {levelKey: [...], spellsKey: [...]} for a given
+// class + subclass choice, or null if unsupported/not selected.
+function subclassSpellTable(className, choice)
+{
+  if (!classesData || !choice) return null
+  if (className === "Cleric") {
+    var domainKey = choice + " Domain"
+    var d = classesData.Cleric && classesData.Cleric["Class Features"][domainKey]
+    return (d && d[domainKey + " Spells"] && d[domainKey + " Spells"].table) || null
+  }
+  if (className === "Paladin") {
+    var oathKey = "Oath of " + choice
+    var o = classesData.Paladin && classesData.Paladin["Sacred Oaths"][oathKey]
+    return (o && o["Oath Spells"] && o["Oath Spells"][oathKey + " Spells"] && o["Oath Spells"][oathKey + " Spells"].table) || null
+  }
+  if (className === "Druid") {
+    var land = classesData.Druid && classesData.Druid["Class Features"]["Circle of the Land"]
+    var c = land && land["Circle Spells"] && land["Circle Spells"][choice]
+    return (c && c.table) || null
+  }
+  return null
+}
+
+// All spell names granted so far (cumulative across thresholds ≤ level),
+// deduped and in table order.
+function subclassBonusSpells(className, choice, level)
+{
+  var table = subclassSpellTable(className, choice)
+  if (!table) return []
+  var keys = Object.keys(table)
+  var levels = table[keys[0]]
+  var spellLists = table[keys[1]]
+  var names = []
+  for (var i = 0; i < levels.length; i++) {
+    if (level >= parseInt(levels[i], 10)) {
+      spellLists[i].split(",").forEach(function(n) {
+        var trimmed = n.trim()
+        if (names.indexOf(trimmed) === -1) names.push(trimmed)
+      })
+    }
+  }
+  return names
+}
+
+// Row data for a bonus spell — pre-filled from data/spells.js, always
+// prepared per PHB ("you always have it prepared... doesn't count against
+// the number of spells you can prepare each day").
+function bonusSpellRowData(name)
+{
+  var spell = SPELLS_BY_NAME[name.toLowerCase()]
+  return {
+    prep: true,
+    name: spell ? spell.Name : name,
+    level: spell ? spell["Level"] : "",
+    attacksave: "",
+    time: spell ? spell["Casting Time"] : "",
+    range: spell ? spell["Range"] : "",
+    duration: spell ? spell["Duration"] : ""
+  }
+}
+
 function updateSpellsAvailable()
 {
+  updateSubclassOptions()
+
   var class1 = resolveClassName($("[name='class1']").val())
   var level1 = parseInt($("[name='level1']").val(), 10) || 0
   var class2 = resolveClassName($("[name='class2']").val())
@@ -222,12 +328,20 @@ function updateSpellsAvailable()
 
   // Spell list rows, split per class (PHB p.164: spells known/prepared are
   // tracked separately per class) — cantrip rows for each class first, then
-  // spell rows for each class, so a Cleric 9/Druid 2 shows which prepared
-  // spells come from being a Cleric vs. a Druid.
+  // subclass bonus (always-prepared) rows, then spell rows, so a Cleric
+  // 9/Druid 2 shows which prepared spells come from being a Cleric vs. a
+  // Druid, plus any domain/oath/circle spells automatically filled in.
   var groups = []
   classes.forEach(function(c, idx) {
     var cantripVal = knownValue(c.name, c.level, "Cantrips Known")
     groups.push({ key: "c" + (idx + 1), kind: "spell-row-cantrip", className: c.name, count: cantripVal === null ? 0 : cantripVal })
+  })
+  classes.forEach(function(c, idx) {
+    var subclassChoice = $("[name='subclass" + (idx + 1) + "']").val()
+    var bonusNames = subclassBonusSpells(c.name, subclassChoice, c.level)
+    if (bonusNames.length > 0) {
+      groups.push({ key: "b" + (idx + 1), kind: "spell-row-bonus", className: c.name, count: bonusNames.length, rows: bonusNames.map(bonusSpellRowData) })
+    }
   })
   classes.forEach(function(c, idx) {
     var knownVal = knownValue(c.name, c.level, "Spells Known")
@@ -238,7 +352,7 @@ function updateSpellsAvailable()
   syncSpellListRows(groups)
 }
 
-$("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wisdomscore'], [name='Charismascore'], [name='Intelligencescore']").bind('input change', function() {
+$("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wisdomscore'], [name='Charismascore'], [name='Intelligencescore'], [name='subclass1'], [name='subclass2']").bind('input change', function() {
   updateProficiencyBonus()
   updateSpellsAvailable()
 })
@@ -291,40 +405,50 @@ function escapeAttr(value)
 
 // className is structural (which class this row's spell slot belongs to,
 // set from the class/level fields) rather than spell data, so it's readonly
-// and untouched by the spellnames-datalist autofill below.
-function buildSpellRow(id, rowClasses, className, data)
+// and untouched by the spellnames-datalist autofill below. Bonus rows
+// (subclass-granted spells) are fully system-derived, so their spell fields
+// are locked too, and Prepared is forced checked+disabled — PHB: "you
+// always have it prepared... doesn't count against the number of spells
+// you can prepare each day."
+function buildSpellRow(id, rowClasses, className, data, locked)
 {
   data = data || {}
+  var ro = locked ? " readonly" : ""
   var tr = document.createElement("tr")
   tr.className = rowClasses
   tr.innerHTML =
-    "<td><input name='spellprep" + id + "' type='checkbox'" + (data.prep ? " checked" : "") + " /></td>" +
-    "<td><input name='spellname" + id + "' type='text' list='spellnames-datalist' value=\"" + escapeAttr(data.name) + "\" /></td>" +
-    "<td><input name='spelllevel" + id + "' type='text' value=\"" + escapeAttr(data.level) + "\" /></td>" +
+    "<td><input name='spellprep" + id + "' type='checkbox'" + (data.prep ? " checked" : "") + (locked ? " disabled" : "") + " /></td>" +
+    "<td><input name='spellname" + id + "' type='text' list='spellnames-datalist' value=\"" + escapeAttr(data.name) + "\"" + ro + " /></td>" +
+    "<td><input name='spelllevel" + id + "' type='text' value=\"" + escapeAttr(data.level) + "\"" + ro + " /></td>" +
     "<td><input name='spellclass" + id + "' type='text' value=\"" + escapeAttr(className) + "\" readonly /></td>" +
     "<td><input name='spellattacksave" + id + "' type='text' value=\"" + escapeAttr(data.attacksave) + "\" /></td>" +
-    "<td><input name='spelltime" + id + "' type='text' value=\"" + escapeAttr(data.time) + "\" /></td>" +
-    "<td><input name='spellrange" + id + "' type='text' value=\"" + escapeAttr(data.range) + "\" /></td>" +
-    "<td><input name='spellduration" + id + "' type='text' value=\"" + escapeAttr(data.duration) + "\" /></td>"
+    "<td><input name='spelltime" + id + "' type='text' value=\"" + escapeAttr(data.time) + "\"" + ro + " /></td>" +
+    "<td><input name='spellrange" + id + "' type='text' value=\"" + escapeAttr(data.range) + "\"" + ro + " /></td>" +
+    "<td><input name='spellduration" + id + "' type='text' value=\"" + escapeAttr(data.duration) + "\"" + ro + " /></td>"
   return tr
 }
 
-// groups: [{ key, kind ("spell-row-cantrip"/"spell-row-spell"), className, count }, ...]
-// in display order. kind drives the blue/red styling; key scopes data
-// preservation and resizing to that specific (class, cantrip/spell) group.
+// groups: [{ key, kind, className, count, rows? }, ...] in display order.
+// kind drives the row color; key scopes data preservation/resizing to that
+// specific (class, row-type) group. Groups with a precomputed `rows` array
+// (subclass bonus spells) are fully derived, so they're rebuilt fresh every
+// time rather than preserved/truncated from prior DOM content.
 function rebuildSpellList(groups)
 {
   var preserved = {}
-  groups.forEach(function(g) { preserved[g.key] = collectSpellRowData(g.key) })
+  groups.forEach(function(g) {
+    preserved[g.key] = g.rows ? g.rows.slice() : collectSpellRowData(g.key)
+    if (!g.rows) preserved[g.key].length = g.count
+  })
 
   var tbody = document.getElementById("spelltable")
   tbody.innerHTML = ""
   var id = 0
   groups.forEach(function(g) {
     var data = preserved[g.key]
-    data.length = g.count
+    var locked = g.kind === "spell-row-bonus"
     for (var i = 0; i < g.count; i++) {
-      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, data[i]))
+      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, data[i], locked))
     }
   })
 }
@@ -332,7 +456,13 @@ function rebuildSpellList(groups)
 var lastSpellGroupsSignature = null
 function syncSpellListRows(groups)
 {
-  var signature = groups.map(function(g) { return g.key + ":" + g.className + ":" + g.count }).join("|")
+  // Precomputed rows (subclass bonus spells) can change without count or
+  // className changing (e.g. switching domain at the same level), so their
+  // spell names are folded into the signature too.
+  var signature = groups.map(function(g) {
+    var rowsPart = g.rows ? g.rows.map(function(r) { return r.name }).join(",") : ""
+    return g.key + ":" + g.className + ":" + g.count + ":" + rowsPart
+  }).join("|")
   if (signature === lastSpellGroupsSignature) return
   lastSpellGroupsSignature = signature
   rebuildSpellList(groups)
@@ -447,6 +577,15 @@ function applyCharacterData(savedData)
   // the row count and cantrip/prepared split are correct before the spell
   // row data itself is applied below.
   ["class1", "level1", "class2", "level2", "Strengthscore", "Dexterityscore", "Constitutionscore", "Intelligencescore", "Wisdomscore", "Charismascore"].forEach(function(name) {
+    if (name in savedData) $("[name='" + name + "']").val(savedData[name])
+  })
+  updateSpellsAvailable();
+
+  // subclass1/subclass2's <option> lists only exist once updateSpellsAvailable()
+  // has run once for the restored class, so the saved choice has to be
+  // applied after that — then recomputed once more to pick up any subclass
+  // bonus spell rows.
+  ["subclass1", "subclass2"].forEach(function(name) {
     if (name in savedData) $("[name='" + name + "']").val(savedData[name])
   })
   updateSpellsAvailable()
