@@ -23,29 +23,160 @@ button {
   font-weight: bold;
 }
 
-/* Header action buttons (cloud sync) */
-form.charsheet header section.toolbar {
-  display: -webkit-box;
-  display: flex;
-  width: 100%;
-  flex-wrap: wrap;
-  -webkit-box-align: center;
-          align-items: center;
-  -webkit-box-pack: center;
-          justify-content: center;
-  gap: 8px;
-  padding: 8px 0;
+/* Top bar (title banner + account/character utility rail)
+   Uses the shared D&D page theme tokens (see css/styles.css on gerome.html):
+   parchment #ffedd7/#fff7ec, dragon red #c93c3c/#a12c2c, ink #1a1a1a, Draconis
+   display font. */
+:root {
+  --parchment:       #ffedd7;
+  --parchment-panel: #fff7ec;
+  --ink:             #1a1a1a;
+  --dragon-red:      #c93c3c;
+  --dragon-red-dark: #a12c2c;
 }
-form.charsheet header section.toolbar > div.toolbar-cloud {
-  display: -webkit-box;
-  display: flex;
-  flex-wrap: wrap;
-  -webkit-box-align: center;
-          align-items: center;
-  -webkit-box-pack: center;
-          justify-content: center;
-  gap: 8px;
+
+form.charsheet header.app-topbar {
+  display: block;
+  font-family: Inter, system-ui, sans-serif;
 }
+
+.app-topbar .app-topbar__banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 26px 32px 20px;
+  border-bottom: 1px solid black;
+}
+.app-topbar .app-topbar__title {
+  margin: 0;
+  font-family: Draconis, sans-serif;
+  font-weight: normal;
+  font-size: 52px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  color: var(--dragon-red);
+}
+.app-topbar .app-topbar__sheet-link {
+  font-family: Draconis, sans-serif;
+  font-size: 20px;
+  color: var(--dragon-red);
+  text-decoration: none;
+  font-weight: bold;
+}
+.app-topbar .app-topbar__sheet-link:hover { color: var(--dragon-red-dark); text-decoration: underline; }
+
+.app-topbar .app-topbar__rail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  column-gap: 8px;
+  padding: 12px 24px;
+}
+.app-topbar .app-topbar__account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  min-width: 0;
+}
+#cloud-status {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.app-topbar__avatar {
+  flex-shrink: 0;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--dragon-red);
+  color: var(--parchment-panel);
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.app-topbar__user {
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.app-topbar__signout {
+  border: 0; background: none; padding: 0;
+  font: inherit; font-size: 13px;
+  color: var(--ink);
+  text-decoration: underline;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.app-topbar__signout:hover { color: var(--dragon-red-dark); }
+
+.app-topbar__select { position: relative; flex-shrink: 0; }
+.app-topbar__select select {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit; font-size: 13px;
+  padding: 7px 28px 7px 12px;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  background: var(--parchment-panel);
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.app-topbar__select::after {
+  content: "\25BC";
+  position: absolute; right: 10px; top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 11px; color: var(--ink);
+}
+
+.app-topbar .btn {
+  font: inherit; font-size: 13px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background-color .12s ease, color .12s ease, border-color .12s ease;
+}
+.app-topbar .btn--outline {
+  padding: 7px 12px;
+  border: 1px solid var(--ink);
+  background: var(--parchment-panel);
+  color: var(--ink);
+}
+.app-topbar .btn--outline:hover { background: var(--dragon-red); border-color: var(--dragon-red-dark); color: var(--parchment-panel); }
+
+.app-topbar .btn--primary {
+  padding: 7px 14px;
+  font-weight: bold;
+  border: 1px solid var(--ink);
+  background: var(--dragon-red);
+  color: var(--parchment-panel);
+}
+.app-topbar .btn--primary:hover { background: var(--dragon-red-dark); }
+
+.app-topbar .btn--ghost {
+  padding: 7px 10px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+}
+.app-topbar .btn--ghost:hover { border-color: var(--dragon-red); color: var(--dragon-red); }
+
+.app-topbar .btn:focus-visible,
+.app-topbar__select select:focus-visible,
+.app-topbar__signout:focus-visible {
+  outline: 2px solid var(--dragon-red);
+  outline-offset: 2px;
+}
+
+@media (max-width: 900px) {
+  .app-topbar .app-topbar__title { font-size: 36px; }
+}
+
+/* Header action buttons (Manual Export/Import, cloud sync) */
 .sheet-btn {
   display: inline-block;
   font-family: inherit;
@@ -53,9 +184,9 @@ form.charsheet header section.toolbar > div.toolbar-cloud {
   font-weight: bold;
   text-transform: none;
   text-align: center;
-  color: #1a1a1a;
-  background-color: #fff7ec;
-  border: 1px solid #1a1a1a;
+  color: var(--ink);
+  background-color: var(--parchment-panel);
+  border: 1px solid var(--ink);
   border-radius: 10px;
   padding: 6px 14px;
   margin: 0;
@@ -63,9 +194,9 @@ form.charsheet header section.toolbar > div.toolbar-cloud {
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .sheet-btn:hover {
-  background-color: #c93c3c;
-  border-color: #a12c2c;
-  color: #fff7ec;
+  background-color: var(--dragon-red);
+  border-color: var(--dragon-red-dark);
+  color: var(--parchment-panel);
 }
 .sheet-btn:disabled {
   opacity: 0.5;
@@ -74,12 +205,6 @@ form.charsheet header section.toolbar > div.toolbar-cloud {
 select.sheet-btn {
   padding: 5px 8px;
   text-transform: none;
-}
-#cloud-status {
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: bold;
-  color: #1a1a1a;
 }
 
 textarea {
@@ -93,23 +218,6 @@ textarea {
   height: 15em;
   background-color:  #ffedd7;
 
-}
-
-div.topheader {
-  font-weight:  normal;
-  color: #c93c3c;
-  text-align:  center;
-  font-size:  4.5em;
-  font-family: Draconis, sans-serif;
-
-}
-
-div.gerome {
-  font-weight:  bold;
-  color: #c93c3c;
-  text-align:  center;
-  font-size:  20px;
-  font-family: Draconis, sans-serif;
 }
 
 a:link, a:visited {
@@ -130,11 +238,13 @@ div.box {
 
 form.charsheet {
   width: 800px;
+  box-sizing: border-box;
   right: 0;
   left: 0;
 position: absolute;
 left: calc((100% - 800px) / 2);
   margin-top: 10px;
+  padding: 0 16px;
   background-image: linear-gradient(rgba(255,255,255,.75), rgba(255,255,255,.75)), url('https://i0.wp.com/growupandgame.com/wp-content/uploads/2017/11/questionable-arcana-calligraphers-supplies-featured.jpg?resize=863%2C610&ssl=1');
   border:  1px solid black;
   border-radius: 10px;

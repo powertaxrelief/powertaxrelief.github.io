@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Character Sheet</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="style.css" rel="stylesheet" type="text/css"/>
   <style>
 @import url('https://fonts.cdnfonts.com/css/draconis');
@@ -12,21 +13,31 @@
 <body style="background-color:#ffedd7">
 <!-- partial:index.partial.html -->
 <form class="charsheet" id="charsheet">
-  <header>
-    <section class="toolbar">
-        <div class="toolbar-cloud">
-          <span id="cloud-status">Not signed in</span>
-          <button id="btn-google-signin" type="button" class="sheet-btn">Sign in with Google</button>
-          <button id="btn-signout" type="button" class="sheet-btn" style="display:none;">Sign out</button>
-          <select id="cloud-character-select" class="sheet-btn" style="display:none;">
-          </select>
-          <button id="btn-new-character" type="button" class="sheet-btn" style="display:none;">New Character</button>
-          <button id="btn-save-cloud" type="button" class="sheet-btn" style="display:none;">Save Now</button>
-          <button id="btn-delete-cloud" type="button" class="sheet-btn" style="display:none;">Delete</button>
-        </div>
-    </section>
+  <header class="app-topbar">
+    <div class="app-topbar__banner">
+      <h1 class="app-topbar__title">Dungeons &amp; Dragons</h1>
+      <a class="app-topbar__sheet-link" href="https://powertaxrelief.github.io/gerome.html">Gerome's Spellbook</a>
+    </div>
+
+    <div class="app-topbar__rail">
+      <div class="app-topbar__account">
+        <span id="cloud-status">Not signed in</span>
+        <span id="user-avatar" class="app-topbar__avatar" style="display:none;" aria-hidden="true"></span>
+        <span id="user-name" class="app-topbar__user" style="display:none;"></span>
+        <button id="btn-signout" type="button" class="app-topbar__signout" style="display:none;">Sign out</button>
+      </div>
+
+      <button id="btn-google-signin" type="button" class="btn btn--outline">Sign in with Google</button>
+
+      <div id="character-select-wrap" class="app-topbar__select" style="display:none;">
+        <select id="cloud-character-select" aria-label="Select a character">
+        </select>
+      </div>
+      <button id="btn-new-character" type="button" class="btn btn--outline" style="display:none;">New Character</button>
+      <button id="btn-save-cloud" type="button" class="btn btn--primary" style="display:none;">Save Now</button>
+      <button id="btn-delete-cloud" type="button" class="btn btn--ghost" style="display:none;">Delete</button>
+    </div>
   </header>
-  <div class="topheader">Dungeons &amp; Dragons<br></div><div class="gerome"><a href="https://powertaxrelief.github.io/gerome.html">Gerome's Spellbook</a></div>
   <header>
     <section class="charname">
       <label for="charname">Character Name</label><input name="charname" id="charname" placeholder="Character Name" />
