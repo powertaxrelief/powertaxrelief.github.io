@@ -54,8 +54,8 @@ var PREPARED_CASTER_ABILITY = { Cleric: "Wisdom", Druid: "Wisdom", Paladin: "Cha
 
 function abilityModifier(abilityName)
 {
-  var mod = parseInt($("[name='" + abilityName + "mod']").val(), 10)
-  return isNaN(mod) ? 0 : mod
+  var score = parseInt($("[name='" + abilityName + "score']").val(), 10)
+  return isNaN(score) ? 0 : Math.floor((score - 10) / 2)
 }
 
 function preparedValue(className, level)
@@ -63,6 +63,7 @@ function preparedValue(className, level)
   var ability = PREPARED_CASTER_ABILITY[className]
   if (!ability || level < 1) return null
   var levelPart = className === "Paladin" ? Math.floor(level / 2) : level
+  if (levelPart < 1) return null
   return Math.max(1, abilityModifier(ability) + levelPart)
 }
 
@@ -87,12 +88,17 @@ function loadClassesData()
     .catch(function(err) { console.error('Could not load data/classes.json:', err) })
 }
 
+// Canonical class names, independent of data/classes.json so class/level
+// resolution (and the formula-based Spells Prepared column) keeps working
+// even if that fetch fails or hasn't finished loading yet.
+var ALL_CLASSES = ["Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"]
+
 function resolveClassName(input)
 {
-  if (!classesData || !input) return null
+  if (!input) return null
   var target = input.trim().toLowerCase()
-  for (var key in classesData) {
-    if (key.toLowerCase() === target) return key
+  for (var i = 0; i < ALL_CLASSES.length; i++) {
+    if (ALL_CLASSES[i].toLowerCase() === target) return ALL_CLASSES[i]
   }
   return null
 }
@@ -144,8 +150,6 @@ function singleClassSlots(className, level)
 
 function updateSpellsAvailable()
 {
-  if (!classesData) return
-
   var class1 = resolveClassName($("[name='class1']").val())
   var level1 = parseInt($("[name='level1']").val(), 10) || 0
   var class2 = resolveClassName($("[name='class2']").val())
@@ -168,9 +172,14 @@ function updateSpellsAvailable()
   } else if (classes.length === 2) {
     var effectiveLevel = 0
     var hasEffective = false
-    var cantripsTotal = 0, cantripsFound = false
-    var knownTotal = 0, knownFound = false
-    var preparedTotal = 0, preparedFound = false
+
+    var accumulators = [
+      { field: "cantrips", lookup: function(c) { return knownValue(c.name, c.level, "Cantrips Known") } },
+      { field: "known", lookup: function(c) { return knownValue(c.name, c.level, "Spells Known") } },
+      { field: "prepared", lookup: function(c) { return preparedValue(c.name, c.level) } }
+    ]
+    var totals = {}
+    accumulators.forEach(function(a) { totals[a.field] = { total: 0, found: false } })
 
     classes.forEach(function(c) {
       if (FULL_CASTERS.indexOf(c.name) !== -1) {
@@ -184,12 +193,13 @@ function updateSpellsAvailable()
         slots = slots.map(function(v, i) { return v + w[i] })
       }
 
-      var cKnown = knownValue(c.name, c.level, "Cantrips Known")
-      if (cKnown !== null) { cantripsTotal += cKnown; cantripsFound = true }
-      var sKnown = knownValue(c.name, c.level, "Spells Known")
-      if (sKnown !== null) { knownTotal += sKnown; knownFound = true }
-      var sPrepared = preparedValue(c.name, c.level)
-      if (sPrepared !== null) { preparedTotal += sPrepared; preparedFound = true }
+      accumulators.forEach(function(a) {
+        var value = a.lookup(c)
+        if (value !== null) {
+          totals[a.field].total += value
+          totals[a.field].found = true
+        }
+      })
     })
 
     if (hasEffective && effectiveLevel >= 1) {
@@ -197,9 +207,9 @@ function updateSpellsAvailable()
       slots = slots.map(function(v, i) { return v + row[i] })
     }
 
-    cantrips = cantripsFound ? cantripsTotal : null
-    known = knownFound ? knownTotal : null
-    prepared = preparedFound ? preparedTotal : null
+    cantrips = totals.cantrips.found ? totals.cantrips.total : null
+    known = totals.known.found ? totals.known.total : null
+    prepared = totals.prepared.found ? totals.prepared.total : null
   }
 
   $("[name='cantripsknown']").val(cantrips === null ? "" : cantrips)
