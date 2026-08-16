@@ -23,29 +23,24 @@ button {
   font-weight: bold;
 }
 
-/* Top bar (title banner + account/character utility rail) */
+/* Top bar (title banner + account/character utility rail)
+   Uses the shared D&D page theme tokens (see css/styles.css on gerome.html):
+   parchment #ffedd7/#fff7ec, dragon red #c93c3c/#a12c2c, ink #1a1a1a, Draconis
+   display font. */
 :root {
-  --topbar-ink:        #1d1a17;
-  --topbar-ink-soft:   #2c2622;
-  --topbar-parchment:  #fbeeda;
-  --topbar-parchment-2:#f1e3ca;
-  --topbar-parchment-3:#fff9ef;
-  --topbar-red:        #c0322a;
-  --topbar-red-ink:    #fff4e3;
-  --topbar-stone-top:  #8f8b83;
-  --topbar-stone-bot:  #7b7770;
-  --topbar-cream:      #f2e4cd;
-  --topbar-muted:      #8a7e70;
-  --topbar-muted-2:    #7a6f64;
-  --topbar-hairline:   #b8ada0;
+  --parchment:       #ffedd7;
+  --parchment-panel: #fff7ec;
+  --ink:             #1a1a1a;
+  --dragon-red:      #c93c3c;
+  --dragon-red-dark: #a12c2c;
 }
 
 form.charsheet header.app-topbar {
   display: block;
-  border: 3px solid var(--topbar-ink);
+  border: 3px solid var(--ink);
   border-radius: 14px 14px 0 0;
   overflow: hidden;
-  background: var(--topbar-parchment);
+  background: var(--parchment-panel);
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -55,29 +50,30 @@ form.charsheet header.app-topbar {
   align-items: center;
   gap: 4px;
   padding: 26px 32px 20px;
-  background: linear-gradient(180deg, var(--topbar-stone-top), var(--topbar-stone-bot));
-  border-bottom: 3px solid var(--topbar-ink);
+  background-color: var(--parchment);
+  background-image: linear-gradient(rgba(255, 237, 215, 0.85), rgba(255, 237, 215, 0.85)),
+    url('https://i0.wp.com/growupandgame.com/wp-content/uploads/2017/11/questionable-arcana-calligraphers-supplies-featured.jpg?resize=863%2C610&ssl=1');
+  background-size: cover;
+  background-position: center;
+  border-bottom: 3px solid var(--ink);
 }
 .app-topbar .app-topbar__title {
   margin: 0;
-  font-family: Cinzel, serif;
-  font-weight: 700;
-  font-size: 44px;
+  font-family: Draconis, sans-serif;
+  font-weight: normal;
+  font-size: 52px;
   letter-spacing: 0.03em;
   white-space: nowrap;
-  color: var(--topbar-red);
-  text-shadow: 0 2px 0 rgba(0,0,0,.28);
+  color: var(--dragon-red);
 }
 .app-topbar .app-topbar__sheet-link {
-  font-family: 'IM Fell English', serif;
-  font-size: 17px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--topbar-cream);
-  text-decoration: underline;
-  font-weight: normal;
+  font-family: Draconis, sans-serif;
+  font-size: 20px;
+  color: var(--dragon-red);
+  text-decoration: none;
+  font-weight: bold;
 }
-.app-topbar .app-topbar__sheet-link:hover { color: #fff; }
+.app-topbar .app-topbar__sheet-link:hover { color: var(--dragon-red-dark); text-decoration: underline; }
 
 .app-topbar .app-topbar__rail {
   display: flex;
@@ -86,7 +82,7 @@ form.charsheet header.app-topbar {
   row-gap: 8px;
   column-gap: 12px;
   padding: 12px 24px;
-  background: var(--topbar-parchment-2);
+  background: var(--parchment);
 }
 .app-topbar .app-topbar__account {
   display: flex;
@@ -98,32 +94,32 @@ form.charsheet header.app-topbar {
 #cloud-status {
   font-family: inherit;
   font-size: 13px;
-  color: var(--topbar-muted);
+  color: var(--ink);
   white-space: nowrap;
 }
 .app-topbar__avatar {
   flex-shrink: 0;
   width: 30px; height: 30px;
   border-radius: 50%;
-  background: var(--topbar-red);
-  color: var(--topbar-parchment);
+  background: var(--dragon-red);
+  color: var(--parchment-panel);
   font-size: 12px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
 .app-topbar__user {
   font-size: 14px;
-  color: #3b332c;
+  color: var(--ink);
   white-space: nowrap;
 }
 .app-topbar__signout {
   border: 0; background: none; padding: 0;
   font: inherit; font-size: 13px;
-  color: var(--topbar-muted);
+  color: var(--ink);
   text-decoration: underline;
   white-space: nowrap;
   cursor: pointer;
 }
-.app-topbar__signout:hover { color: var(--topbar-ink-soft); }
+.app-topbar__signout:hover { color: var(--dragon-red-dark); }
 
 .app-topbar__select { position: relative; flex-shrink: 0; }
 .app-topbar__select select {
@@ -131,10 +127,10 @@ form.charsheet header.app-topbar {
   -webkit-appearance: none;
   font: inherit; font-size: 14px;
   padding: 8px 34px 8px 14px;
-  border: 2px solid var(--topbar-ink);
-  border-radius: 8px;
-  background: var(--topbar-parchment-3);
-  color: var(--topbar-ink-soft);
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  background: var(--parchment-panel);
+  color: var(--ink);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -143,12 +139,12 @@ form.charsheet header.app-topbar {
   position: absolute; right: 12px; top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  font-size: 11px; color: #5a5049;
+  font-size: 11px; color: var(--ink);
 }
 
 .app-topbar .btn {
   font: inherit; font-size: 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   white-space: nowrap;
   flex-shrink: 0;
   cursor: pointer;
@@ -156,38 +152,69 @@ form.charsheet header.app-topbar {
 }
 .app-topbar .btn--outline {
   padding: 8px 16px;
-  border: 2px solid var(--topbar-ink);
-  background: var(--topbar-parchment-3);
-  color: var(--topbar-ink-soft);
+  border: 1px solid var(--ink);
+  background: var(--parchment-panel);
+  color: var(--ink);
 }
-.app-topbar .btn--outline:hover { background: #fff; }
+.app-topbar .btn--outline:hover { background: var(--dragon-red); border-color: var(--dragon-red-dark); color: var(--parchment-panel); }
 
 .app-topbar .btn--primary {
   padding: 8px 18px;
-  font-weight: 600;
-  border: 2px solid var(--topbar-ink);
-  background: var(--topbar-red);
-  color: var(--topbar-red-ink);
+  font-weight: bold;
+  border: 1px solid var(--ink);
+  background: var(--dragon-red);
+  color: var(--parchment-panel);
 }
-.app-topbar .btn--primary:hover { background: #a8231c; }
+.app-topbar .btn--primary:hover { background: var(--dragon-red-dark); }
 
 .app-topbar .btn--ghost {
   padding: 8px 14px;
-  border: 2px solid var(--topbar-hairline);
+  border: 1px solid var(--ink);
   background: transparent;
-  color: var(--topbar-muted-2);
+  color: var(--ink);
 }
-.app-topbar .btn--ghost:hover { border-color: var(--topbar-red); color: var(--topbar-red); }
+.app-topbar .btn--ghost:hover { border-color: var(--dragon-red); color: var(--dragon-red); }
 
 .app-topbar .btn:focus-visible,
 .app-topbar__select select:focus-visible,
 .app-topbar__signout:focus-visible {
-  outline: 2px solid var(--topbar-red);
+  outline: 2px solid var(--dragon-red);
   outline-offset: 2px;
 }
 
 @media (max-width: 900px) {
-  .app-topbar .app-topbar__title { font-size: 32px; }
+  .app-topbar .app-topbar__title { font-size: 36px; }
+}
+
+/* Header action buttons (Manual Export/Import, cloud sync) */
+.sheet-btn {
+  display: inline-block;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: none;
+  text-align: center;
+  color: var(--ink);
+  background-color: var(--parchment-panel);
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  padding: 6px 14px;
+  margin: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.sheet-btn:hover {
+  background-color: var(--dragon-red);
+  border-color: var(--dragon-red-dark);
+  color: var(--parchment-panel);
+}
+.sheet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+select.sheet-btn {
+  padding: 5px 8px;
+  text-transform: none;
 }
 
 textarea {
