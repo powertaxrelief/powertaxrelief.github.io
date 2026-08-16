@@ -966,6 +966,12 @@ form.charsheet header section.attacksandspellcasting > div > table input {
   font-size: 10px;
   padding: 3px;
 }
+/* Cantrip rows in the Spell List: same lightness/saturation as the default
+   red input, rotated to blue, to visually separate them from prepared/known
+   spell rows. */
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-cantrip input {
+  background-color: #6c9ee0;
+}
 form.charsheet header section.attacksandspellcasting > div textarea {
   border: 0;
   height: 10em;

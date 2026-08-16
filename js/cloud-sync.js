@@ -10,7 +10,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 
 const AUTOSAVE_DEBOUNCE_MS = 2000;
-const DEFAULT_ROWS = { rows_attacks: '2', rows_attunements: '3', rows_inventory: '2', rows_spells: '2' };
+const DEFAULT_ROWS = { rows_attacks: '2', rows_attunements: '3', rows_inventory: '2' };
 
 let currentUser = null;
 let currentCharacterId = null;

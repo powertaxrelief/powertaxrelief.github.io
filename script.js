@@ -219,6 +219,8 @@ function updateSpellsAvailable()
   for (var i = 0; i < 9; i++) {
     $("[name='spellslotsmax" + (i + 1) + "']").val(slots[i] === 0 ? "" : slots[i])
   }
+
+  syncSpellListRows(cantrips === null ? 0 : cantrips, (known === null ? 0 : known) + (prepared === null ? 0 : prepared))
 }
 
 $("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wisdomscore'], [name='Charismascore'], [name='Intelligencescore']").bind('input change', function() {
@@ -227,6 +229,108 @@ $("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wi
 })
 
 loadClassesData()
+
+// ---- Spell list (Cantrips Known rows + Spells Known/Prepared rows) ----
+// Row count is derived live from Spells Available, not user-managed. PHB
+// multiclass rule: each class's spells known/prepared are tracked
+// separately (p.164), so Spells Known + Spells Prepared is the correct
+// total — they're never both non-null for the same class.
+var SPELLS_BY_NAME = {}
+if (typeof obj !== 'undefined' && obj.spells) {
+  obj.spells.forEach(function(s) { SPELLS_BY_NAME[s.Name.toLowerCase()] = s })
+}
+
+function buildSpellDatalist()
+{
+  var datalist = document.getElementById('spellnames-datalist')
+  if (!datalist || typeof obj === 'undefined' || !obj.spells) return
+  var names = obj.spells.map(function(s) { return s.Name }).sort()
+  datalist.innerHTML = names.map(function(n) {
+    return "<option value='" + n.replace(/'/g, "&#39;") + "'></option>"
+  }).join("")
+}
+buildSpellDatalist()
+
+function collectSpellRowData(rowClass)
+{
+  var rows = []
+  $("#spelltable tr." + rowClass).each(function() {
+    var $tr = $(this)
+    rows.push({
+      prep: $tr.find("input[name^='spellprep']").prop("checked"),
+      name: $tr.find("input[name^='spellname']").val(),
+      level: $tr.find("input[name^='spelllevel']").val(),
+      source: $tr.find("input[name^='spellsource']").val(),
+      attacksave: $tr.find("input[name^='spellattacksave']").val(),
+      time: $tr.find("input[name^='spelltime']").val(),
+      range: $tr.find("input[name^='spellrange']").val(),
+      duration: $tr.find("input[name^='spellduration']").val()
+    })
+  })
+  return rows
+}
+
+function escapeAttr(value)
+{
+  return String(value == null ? "" : value).replace(/"/g, "&quot;")
+}
+
+function buildSpellRow(id, rowClass, data)
+{
+  data = data || {}
+  var tr = document.createElement("tr")
+  tr.className = rowClass
+  tr.innerHTML =
+    "<td><input name='spellprep" + id + "' type='checkbox'" + (data.prep ? " checked" : "") + " /></td>" +
+    "<td><input name='spellname" + id + "' type='text' list='spellnames-datalist' value=\"" + escapeAttr(data.name) + "\" /></td>" +
+    "<td><input name='spelllevel" + id + "' type='text' value=\"" + escapeAttr(data.level) + "\" /></td>" +
+    "<td><input name='spellsource" + id + "' type='text' value=\"" + escapeAttr(data.source) + "\" /></td>" +
+    "<td><input name='spellattacksave" + id + "' type='text' value=\"" + escapeAttr(data.attacksave) + "\" /></td>" +
+    "<td><input name='spelltime" + id + "' type='text' value=\"" + escapeAttr(data.time) + "\" /></td>" +
+    "<td><input name='spellrange" + id + "' type='text' value=\"" + escapeAttr(data.range) + "\" /></td>" +
+    "<td><input name='spellduration" + id + "' type='text' value=\"" + escapeAttr(data.duration) + "\" /></td>"
+  return tr
+}
+
+function rebuildSpellList(cantripCount, spellCount)
+{
+  var cantripData = collectSpellRowData("spell-row-cantrip")
+  var spellData = collectSpellRowData("spell-row-spell")
+  cantripData.length = cantripCount
+  spellData.length = spellCount
+
+  var tbody = document.getElementById("spelltable")
+  tbody.innerHTML = ""
+  var id = 0
+  for (var i = 0; i < cantripCount; i++) {
+    tbody.appendChild(buildSpellRow(id++, "spell-row-cantrip", cantripData[i]))
+  }
+  for (var j = 0; j < spellCount; j++) {
+    tbody.appendChild(buildSpellRow(id++, "spell-row-spell", spellData[j]))
+  }
+}
+
+function syncSpellListRows(cantripCount, spellCount)
+{
+  var currentCantrips = $("#spelltable tr.spell-row-cantrip").length
+  var currentSpells = $("#spelltable tr.spell-row-spell").length
+  if (cantripCount === currentCantrips && spellCount === currentSpells) return
+  rebuildSpellList(cantripCount, spellCount)
+}
+
+// Autofill Level/Source/Cast Time/Range/Duration from data/spells.js when a
+// row's spell name matches. Attack/Save has no equivalent field in that
+// dataset, so it stays manual. Delegated since rows are rebuilt dynamically.
+$("#spelltable").on("input", "input[list='spellnames-datalist']", function() {
+  var spell = SPELLS_BY_NAME[this.value.trim().toLowerCase()]
+  if (!spell) return
+  var id = this.name.replace("spellname", "")
+  $("[name='spelllevel" + id + "']").val(spell["Level"])
+  $("[name='spellsource" + id + "']").val(spell["Source"])
+  $("[name='spelltime" + id + "']").val(spell["Casting Time"])
+  $("[name='spellrange" + id + "']").val(spell["Range"])
+  $("[name='spellduration" + id + "']").val(spell["Duration"])
+})
 
 function totalhd_clicked()
 {
@@ -237,7 +341,6 @@ function totalhd_clicked()
 var rows_attacks = 2;
 var rows_inventory = 2;
 var rows_attunements = 3;
-var rows_spells = 2;
 
 // Builds a plain object of every named form field (used by both the local
 // file export and cloud sync, so the on-disk and Firestore formats stay identical).
@@ -320,12 +423,14 @@ function applyCharacterData(savedData)
     add_inventory();
   }
 
-  while (rows_spells > parseInt(savedData.rows_spells)) {
-    remove_last_row('spelltable');
-  }
-  while (rows_spells < parseInt(savedData.rows_spells)) {
-    add_spell();
-  }
+  // Spell list rows are derived from class/level + ability scores (see
+  // syncSpellListRows), not a stored count. Restore those fields first so
+  // the row count and cantrip/prepared split are correct before the spell
+  // row data itself is applied below.
+  ["class1", "level1", "class2", "level2", "Strengthscore", "Dexterityscore", "Constitutionscore", "Intelligencescore", "Wisdomscore", "Charismascore"].forEach(function(name) {
+    if (name in savedData) $("[name='" + name + "']").val(savedData[name])
+  })
+  updateSpellsAvailable()
 
   const formId = "charsheet";
   let form = document.querySelector(`#${formId}`);
@@ -417,17 +522,6 @@ function long_rest()
   $("[name='bonusmaxhp']").val($("[name='maxhp']").val())
   $("[name='pactslots1']").val($("[name='pactslotsmax1']").val())
 
-  $("[name='spellbox1']").prop("checked", false);
-  $("[name='spellbox2']").prop("checked", false);
-  $("[name='spellbox3']").prop("checked", false);
-  $("[name='spellbox4']").prop("checked", false);
-  $("[name='spellbox5']").prop("checked", false);
-  $("[name='spellbox6']").prop("checked", false);
-  $("[name='spellbox7']").prop("checked", false);
-  $("[name='spellbox8']").prop("checked", false);
-  $("[name='spellbox9']").prop("checked", false);
-  $("[name='spellbox10']").prop("checked", false);
-
   $("[name='deathsuccess1']").prop("checked", false);
   $("[name='deathsuccess2']").prop("checked", false);
   $("[name='deathsuccess3']").prop("checked", false);
@@ -457,34 +551,6 @@ function add_attack()
 
   rows_attacks += 1;
   $("[name='rows_attacks']").val(rows_attacks);
-}
-
-function add_spell()
-{
-  var tableRef = document.getElementById('spelltable')
-
-  var row = tableRef.insertRow(tableRef.rows.length)
-
-  var cell0 = row.insertCell(0);
-  var cell1 = row.insertCell(1);
-  var cell2 = row.insertCell(2);
-  var cell3 = row.insertCell(3);
-  var cell4 = row.insertCell(4);
-  var cell5 = row.insertCell(5);
-  var cell6 = row.insertCell(6);
-  var cell7 = row.insertCell(7);
-
-  cell0.innerHTML = "<td><input name='spellprep" + rows_spells + "' type='checkbox' /></td>";
-  cell1.innerHTML = "<td><input name='spellname" + rows_spells + "' type='text' /></td>";
-  cell2.innerHTML = "<td><input name='spelllevel" + rows_spells + "' type='text' /></td>";
-  cell3.innerHTML = "<td><input name='spellsource" + rows_spells + "' type='text' /></td>";
-  cell4.innerHTML = "<td><input name='spellattacksave" + rows_spells + "' type='text' /></td>";
-  cell5.innerHTML = "<td><input name='spelltime" + rows_spells + "' type='text' /></td>";
-  cell6.innerHTML = "<td><input name='spellrange" + rows_spells + "' type='text' /></td>";
-  cell7.innerHTML = "<td><input name='spellduration" + rows_spells + "' type='text' /></td>";
-
-  rows_spells += 1;
-  $("[name='rows_spells']").val(rows_spells);
 }
 
 function add_inventory()
@@ -550,17 +616,10 @@ function remove_last_row(tableId)
         rows_inventory = 0;
       }
       break;
-    case 'spelltable':
-      rows_spells -= 1;
-      if (rows_spells < 0) {
-        rows_spells = 0;
-      }
-      break;
   }
   $("[name='rows_attacks']").val(rows_attacks);
   $("[name='rows_attunements']").val(rows_attunements);
   $("[name='rows_inventory']").val(rows_inventory);
-  $("[name='rows_spells']").val(rows_spells);
 }
 
 function calc_carry_weight()
