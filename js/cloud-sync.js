@@ -95,7 +95,14 @@ async function loadCharacter(charId) {
     return;
   }
   const record = snap.data();
-  window.applyCharacterData(record.data);
+  // applyCharacterData waits on the class-data fetch and returns false if it
+  // couldn't be applied. Don't adopt the character in that case — autosave
+  // would overwrite the stored record with a half-applied form.
+  const applied = await window.applyCharacterData(record.data);
+  if (!applied) {
+    el.select.value = currentCharacterId || '';
+    return;
+  }
   currentCharacterId = charId;
   currentCharacterName = record.name;
 }
@@ -148,7 +155,8 @@ el.select.addEventListener('change', async () => {
 el.newChar.addEventListener('click', async () => {
   const name = prompt('Name this character:');
   if (!name) return;
-  window.applyCharacterData(blankCharacterData());
+  const applied = await window.applyCharacterData(blankCharacterData());
+  if (!applied) return;
   const docRef = await addDoc(charactersCollection(currentUser.uid), {
     name: name,
     data: window.serializeCharacterForm(),

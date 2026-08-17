@@ -372,10 +372,23 @@ form.charsheet header section.misc ul li {
 form.charsheet header section.misc ul li label {
   margin-bottom: 5px;
 }
-form.charsheet header section.misc ul li input {
+/* Class/Multiclass and the subclass pickers are <select>s, so they need the
+   same flat parchment treatment the text fields get — otherwise they render
+   as native OS dropdowns in the middle of the sheet. */
+form.charsheet header section.misc ul li input,
+form.charsheet header section.misc ul li select {
   border: 0;
   border-bottom: 1px solid #c93c3c;
   background-color:  #ffedd7;
+}
+form.charsheet header section.misc ul li select {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
 }
 form.charsheet main {
   display: -webkit-box;
