@@ -620,6 +620,11 @@ function applyCharacterData(savedData)
   for (const element of formElements) {
     if (element.name in savedData) {
       if (element.type == 'checkbox') {
+        // A disabled checkbox (cantrip/prepared-caster/bonus spell rows)
+        // has its checked state fully derived by updateSpellsAvailable()
+        // above, not stored — skip it so stale saved data (e.g. from
+        // before this row was locked) can't overwrite it.
+        if (element.disabled) continue
         var checked = (savedData[element.name] == 'checked');
         $("[name='" + element.name + "']").prop("checked", checked)
       } else {
