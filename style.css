@@ -372,10 +372,23 @@ form.charsheet header section.misc ul li {
 form.charsheet header section.misc ul li label {
   margin-bottom: 5px;
 }
-form.charsheet header section.misc ul li input {
+/* Class/Multiclass and the subclass pickers are <select>s, so they need the
+   same flat parchment treatment the text fields get — otherwise they render
+   as native OS dropdowns in the middle of the sheet. */
+form.charsheet header section.misc ul li input,
+form.charsheet header section.misc ul li select {
   border: 0;
   border-bottom: 1px solid #c93c3c;
   background-color:  #ffedd7;
+}
+form.charsheet header section.misc ul li select {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
 }
 form.charsheet main {
   display: -webkit-box;
@@ -965,6 +978,22 @@ form.charsheet header section.attacksandspellcasting > div > table input {
   background-color: #e06c6c;
   font-size: 10px;
   padding: 3px;
+}
+/* Cantrip rows in the Spell List: same lightness/saturation as the default
+   red input, rotated to blue, to visually separate them from prepared/known
+   spell rows. */
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-cantrip input {
+  background-color: #6c9ee0;
+}
+/* Bonus/always-prepared rows (domain/oath/circle spells): same
+   lightness/saturation, rotated to green. Locked fields (readonly/disabled)
+   use a slightly dimmer text color so they read as system-managed. */
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-bonus input {
+  background-color: #6ce07f;
+}
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-bonus input:read-only,
+form.charsheet header section.attacksandspellcasting > div > table tr.spell-row-bonus input:disabled {
+  color: #333;
 }
 form.charsheet header section.attacksandspellcasting > div textarea {
   border: 0;

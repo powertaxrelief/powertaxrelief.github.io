@@ -45,16 +45,24 @@
     <section class="misc">
       <ul>
         <li>
-          <label for="class1">Class</label><input name="class1" id="class1" placeholder="Class" />
+          <label for="class1">Class</label><select name="class1" id="class1"></select>
         </li>
         <li>
           <label for="level1">Level</label><input name="level1" id="level1" placeholder="1" type="number" min="1" max="20" />
         </li>
+        <li id="subclass1wrap" style="display:none;">
+          <label for="subclass1" id="subclass1label">Subclass</label>
+          <select name="subclass1" id="subclass1"></select>
+        </li>
         <li>
-          <label for="class2">Multiclass</label><input name="class2" id="class2" placeholder="Multiclass" />
+          <label for="class2">Multiclass</label><select name="class2" id="class2"></select>
         </li>
         <li>
           <label for="level2">Multiclass Level</label><input name="level2" id="level2" placeholder="" type="number" min="1" max="19" />
+        </li>
+        <li id="subclass2wrap" style="display:none;">
+          <label for="subclass2" id="subclass2label">Multiclass Subclass</label>
+          <select name="subclass2" id="subclass2"></select>
         </li>
         <li>
           <label for="playername">Player Name</label><input name="playername" placeholder="Player Name">
@@ -451,22 +459,6 @@
         </table>
       </div>
     </section>
-
-    <section class="attacksandspellcasting" id="pactslots" style="width:30%;" style="display: none;">
-        <div>
-          <label>Cast Spells</label>
-          <table>
-            <thead>
-              <tr><alignment = left><font size = 1.5>Level 1 <alignment = left><input name="spellbox1" type="checkbox" /><input name="spellbox2" type="checkbox" /><input name="spellbox3" type="checkbox" /><input name="spellbox4" type="checkbox" /></font>
-              <tr><alignment = left><font size = 1.5>Level 2 <alignment = left><input name="spellbox5" type="checkbox" /><input name="spellbox6" type="checkbox" /><input name="spellbox7" type="checkbox" /></font>
-              <tr><alignment = left><font size = 1.5>Level 3 <alignment = left><input name="spellbox8" type="checkbox" /><input name="spellbox9" type="checkbox" /><input name="spellbox10" type="checkbox" /></font>
-              <tr><alignment = left><font size = 1.5>Level 4 <alignment = left><input name="spellbox11" type="checkbox" />
-              </tr>
-              <br>
-            </tbody>
-          </table>
-        </div>
-      </section>
   </header>
   <header>
     <section class="attacksandspellcasting" id="spells">
@@ -485,7 +477,7 @@
                 Level
               </th>
               <th>
-                Source
+                Class
               </th>
               <th>
                 Attack/Save
@@ -503,64 +495,9 @@
             </tr>
           </thead>
           <tbody id="spelltable">
-            <tr>
-              <td>
-                <input name="spellprep1" type="checkbox" />
-              </td>
-              <td>
-                <input name="spellname0" type="text" />
-              </td>
-              <td>
-                <input name="spelllevel0" type="text" />
-              </td>
-              <td>
-                <input name="spellsource0" type="text" />
-              </td>
-              <td>
-                <input name="spellattacksave0" type="text" />
-              </td>
-              <td>
-                <input name="spelltime0" type="text" />
-              </td>
-              <td>
-                <input name="spellrange0" type="text" />
-              </td>
-              <td>
-                <input name="spellduration0" type="text" />
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <input name="spellprep1" type="checkbox" />
-              </td>
-              <td>
-                <input name="spellname1" type="text" />
-              </td>
-              <td>
-                <input name="spelllevel1" type="text" />
-              </td>
-              <td>
-                <input name="spellsource1" type="text" />
-              </td>
-              <td>
-                <input name="spellattacksave1" type="text" />
-              </td>
-              <td>
-                <input name="spelltime1" type="text" />
-              </td>
-              <td>
-                <input name="spellrange1" type="text" />
-              </td>
-              <td>
-                <input name="spellduration1" type="text" />
-              </td>
-            </tr>
           </tbody>
         </table>
-        <span>
-          <button name="button-addspell" type="button" onclick="add_spell()" style="width:20%;">Add New Spell</button>
-          <button name="button-removespell" type="button" onclick="remove_last_row('spelltable')" style="width:20%;">Remove Spell</button>
-        </span>
+        <datalist id="spellnames-datalist"></datalist>
         <textarea name="spellsnotes" placeholder="Additional spell notes"></textarea>
       </div>
     </section>
@@ -828,7 +765,6 @@
     <input name="rows_attacks" type="hidden" value="2"/>
     <input name="rows_attunements" type="hidden" value="3"/>
     <input name="rows_inventory" type="hidden" value="2"/>
-    <input name="rows_spells" type="hidden" value="2"/>
   </main>
 
   <footer class="manualbackup">
@@ -841,6 +777,7 @@
 </form>
 <!-- partial -->
   <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+  <script src="data/spells.js"></script>
   <script  src="./script.js"></script>
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/cloud-sync.js"></script>

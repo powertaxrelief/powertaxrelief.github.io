@@ -77,15 +77,25 @@ var MULTICLASS_SLOTS = [
   [4,3,3,3,2,1,1,1,1], [4,3,3,3,3,1,1,1,1], [4,3,3,3,3,2,1,1,1], [4,3,3,3,3,2,2,1,1]
 ]
 
+// Settles (never rejects) once the classes.json fetch is done, successfully or
+// not. Character loads wait on it: spell list row counts are derived from this
+// data, so applying a character before it lands would build zero rows and
+// silently drop the saved spell list.
+var classesDataReady = null
+
 function loadClassesData()
 {
-  fetch('data/classes.json')
-    .then(function(res) { return res.json() })
+  classesDataReady = fetch('data/classes.json')
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return res.json()
+    })
     .then(function(json) {
       classesData = json
       updateSpellsAvailable()
     })
     .catch(function(err) { console.error('Could not load data/classes.json:', err) })
+  return classesDataReady
 }
 
 // Canonical class names, independent of data/classes.json so class/level
@@ -96,12 +106,50 @@ var ALL_CLASSES = ["Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "P
 function resolveClassName(input)
 {
   if (!input) return null
-  var target = input.trim().toLowerCase()
+  var target = String(input).trim().toLowerCase()
   for (var i = 0; i < ALL_CLASSES.length; i++) {
     if (ALL_CLASSES[i].toLowerCase() === target) return ALL_CLASSES[i]
   }
   return null
 }
+
+// class1/class2 are <select>s rather than free text. Beyond the obvious
+// usability win, it means a half-typed class name ("Wizar") can never be
+// observed mid-edit — that transient unresolvable state used to collapse the
+// derived spell list to zero rows and destroy its contents.
+function ensureClassOption(select, value)
+{
+  if (!select || !value) return
+  var exists = Array.prototype.some.call(select.options, function(o) { return o.value === value })
+  if (exists) return
+  var opt = document.createElement("option")
+  opt.value = value
+  opt.textContent = value
+  select.appendChild(opt)
+}
+
+function buildClassSelects()
+{
+  ;[{ id: "class1", blank: "-- select --" }, { id: "class2", blank: "-- none --" }].forEach(function(entry) {
+    var select = document.getElementById(entry.id)
+    if (!select) return
+    var current = select.value
+    select.innerHTML = ""
+    var blank = document.createElement("option")
+    blank.value = ""
+    blank.textContent = entry.blank
+    select.appendChild(blank)
+    ALL_CLASSES.forEach(function(name) {
+      var opt = document.createElement("option")
+      opt.value = name
+      opt.textContent = name
+      select.appendChild(opt)
+    })
+    ensureClassOption(select, current)
+    select.value = current
+  })
+}
+buildClassSelects()
 
 function classRow(className, level)
 {
@@ -148,16 +196,207 @@ function singleClassSlots(className, level)
   return SLOT_COLUMNS.map(function(col) { return cellNumber(row[col]) })
 }
 
+// ---- Spell lookup (data/spells.js) ----
+var SPELLS_BY_NAME = {}
+if (typeof obj !== 'undefined' && obj.spells) {
+  obj.spells.forEach(function(s) { SPELLS_BY_NAME[s.Name.toLowerCase()] = s })
+}
+
+// data/classes.json writes subclass spell tables as lowercase PHB prose; a few
+// entries don't match data/spells.js's canonical name. Without an alias the
+// bonus row renders with the raw table text and no Level/Cast Time/Range/
+// Duration at all.
+var SPELL_NAME_ALIASES = {
+  "acid arrow": "Melf's Acid Arrow"
+}
+
+function lookupSpell(name)
+{
+  var key = String(name == null ? "" : name).trim().toLowerCase()
+  var spell = SPELLS_BY_NAME[key]
+  if (!spell && SPELL_NAME_ALIASES[key]) spell = SPELLS_BY_NAME[SPELL_NAME_ALIASES[key].toLowerCase()]
+  return spell || null
+}
+
+// ---- Subclass-granted bonus spells (always prepared, don't count against
+// Spells Known/Prepared) ----
+// Core PHB: Cleric Divine Domain (58-63), Paladin Sacred Oath (86-92),
+// Druid Circle of the Land (68-69, by terrain). Tasha's Cauldron of
+// Everything (2014-compatible expansion, not the 2024 PHB): Druid Circle
+// of Spores/Stars/Wildfire. Warlock patrons don't grant automatic spells
+// in the core PHB (that's a separate Xanathar's-only mechanic), so
+// Warlock is intentionally not included.
+var SUBCLASS_CHOICES = {
+  Cleric: ["Knowledge", "Life", "Light", "Nature", "Tempest", "Trickery", "War"],
+  Paladin: ["Devotion", "the Ancients", "Vengeance"],
+  Druid: [
+    { value: "Land:Arctic", label: "Land (Arctic)" },
+    { value: "Land:Coast", label: "Land (Coast)" },
+    { value: "Land:Desert", label: "Land (Desert)" },
+    { value: "Land:Forest", label: "Land (Forest)" },
+    { value: "Land:Grassland", label: "Land (Grassland)" },
+    { value: "Land:Mountain", label: "Land (Mountain)" },
+    { value: "Land:Swamp", label: "Land (Swamp)" },
+    { value: "Spores", label: "Spores" },
+    { value: "Stars", label: "Stars" },
+    { value: "Wildfire", label: "Wildfire" }
+  ]
+}
+var DRUID_CIRCLE_KEYS = { Spores: "Circle of Spores", Stars: "Circle of the Stars", Wildfire: "Circle of Wildfire" }
+
+function updateSubclassOptions()
+{
+  var class1 = resolveClassName($("[name='class1']").val())
+  var class2 = resolveClassName($("[name='class2']").val())
+  ;[{ slot: 1, className: class1 }, { slot: 2, className: class2 }].forEach(function(entry) {
+    var wrap = $("#subclass" + entry.slot + "wrap")
+    var label = $("#subclass" + entry.slot + "label")
+    var select = $("[name='subclass" + entry.slot + "']")
+    var choices = SUBCLASS_CHOICES[entry.className]
+    if (!choices) {
+      // Drop the options *and* the value: a subclass belongs to the class that
+      // granted it, so leaving a hidden "Life" behind would keep serializing a
+      // domain the character no longer has.
+      wrap.css("display", "none")
+      select.empty().removeData("builtFor")
+      return
+    }
+    if (select.data("builtFor") !== entry.className) {
+      var current = select.val()
+      var values = choices.map(function(c) { return typeof c === "string" ? c : c.value })
+      var options = "<option value=''>-- select --</option>" + choices.map(function(c) {
+        var value = typeof c === "string" ? c : c.value
+        var text = typeof c === "string" ? c : c.label
+        return "<option value='" + value + "'>" + text + "</option>"
+      }).join("")
+      select.html(options)
+      select.data("builtFor", entry.className)
+      select.val(current && values.indexOf(current) !== -1 ? current : "")
+      var labelText = entry.className === "Cleric" ? "Divine Domain"
+        : entry.className === "Paladin" ? "Sacred Oath"
+        : "Druid Circle"
+      label.text((entry.slot === 2 ? "Multiclass " : "") + labelText)
+    }
+    wrap.css("display", "")
+  })
+}
+
+// Returns the raw PHB table {levelKey: [...], spellsKey: [...]} for a given
+// class + subclass choice, or null if unsupported/not selected.
+function subclassSpellTable(className, choice)
+{
+  if (!classesData || !choice) return null
+  var data = classesData[className]
+  if (!data) return null
+  if (className === "Cleric") {
+    var domainKey = choice + " Domain"
+    var d = (data["Class Features"] || {})[domainKey]
+    return (d && d[domainKey + " Spells"] && d[domainKey + " Spells"].table) || null
+  }
+  if (className === "Paladin") {
+    var oathKey = "Oath of " + choice
+    var o = (data["Sacred Oaths"] || {})[oathKey]
+    var oathSpells = o && o["Oath Spells"] && o["Oath Spells"][oathKey + " Spells"]
+    return (oathSpells && oathSpells.table) || null
+  }
+  if (className === "Druid") {
+    var features = data["Class Features"] || {}
+    if (choice.indexOf("Land:") === 0) {
+      var terrain = choice.slice(5)
+      var land = features["Circle of the Land"]
+      var c = land && land["Circle Spells"] && land["Circle Spells"][terrain]
+      return (c && c.table) || null
+    }
+    var circleKey = DRUID_CIRCLE_KEYS[choice]
+    var circle = circleKey && features[circleKey]
+    return (circle && circle[circleKey + " Spells"] && circle[circleKey + " Spells"].table) || null
+  }
+  return null
+}
+
+// Circle of the Land's Bonus Cantrip (PHB p.68): one extra druid cantrip from
+// 2nd level. It's the only subclass in this dataset that changes the cantrip
+// count, so it's handled directly rather than through a table.
+function subclassBonusCantrips(className, choice, level)
+{
+  if (className === "Druid" && choice && choice.indexOf("Land:") === 0 && level >= 2) return 1
+  return 0
+}
+
+function subclassChoiceForSlot(slot)
+{
+  return $("[name='subclass" + slot + "']").val()
+}
+
+// All spell names granted so far (cumulative across thresholds ≤ level),
+// deduped and in table order.
+function subclassBonusSpells(className, choice, level)
+{
+  var table = subclassSpellTable(className, choice)
+  if (!table) return []
+  var keys = Object.keys(table)
+  var levels = table[keys[0]]
+  var spellLists = table[keys[1]]
+  var names = []
+  if (!levels || !spellLists) return names
+  for (var i = 0; i < levels.length; i++) {
+    if (typeof spellLists[i] !== "string") continue
+    if (level >= parseInt(levels[i], 10)) {
+      spellLists[i].split(",").forEach(function(n) {
+        var trimmed = n.trim()
+        if (trimmed && names.indexOf(trimmed) === -1) names.push(trimmed)
+      })
+    }
+  }
+  return names
+}
+
+// Row data for a bonus spell — pre-filled from data/spells.js, always
+// prepared per PHB ("you always have it prepared... doesn't count against
+// the number of spells you can prepare each day").
+function bonusSpellRowData(name)
+{
+  var spell = lookupSpell(name)
+  return {
+    prep: true,
+    name: spell ? spell.Name : name,
+    level: spell ? spell["Level"] : "",
+    attacksave: "",
+    time: spell ? spell["Casting Time"] : "",
+    range: spell ? spell["Range"] : "",
+    duration: spell ? spell["Duration"] : "",
+    // No match in data/spells.js, so there's nothing to prefill. Leave the row
+    // editable rather than stranding an uneditable, half-blank row.
+    unresolved: !spell
+  }
+}
+
+// Cantrips a class contributes, including any its chosen subclass adds. Used
+// for both the Cantrips Known readout and the cantrip row count so the two
+// can't disagree.
+function cantripsForClass(c)
+{
+  var base = knownValue(c.name, c.level, "Cantrips Known")
+  if (base === null) return null
+  return base + subclassBonusCantrips(c.name, subclassChoiceForSlot(c.slot), c.level)
+}
+
 function updateSpellsAvailable()
 {
+  updateSubclassOptions()
+
   var class1 = resolveClassName($("[name='class1']").val())
   var level1 = parseInt($("[name='level1']").val(), 10) || 0
   var class2 = resolveClassName($("[name='class2']").val())
   var level2 = parseInt($("[name='level2']").val(), 10) || 0
 
+  // `slot` is the sheet field this class came from (1 = Class, 2 = Multiclass).
+  // It has to be carried explicitly: this array is compacted, so a class in the
+  // Multiclass field lands at index 0 whenever the Class field is empty, and
+  // indexing subclass<N> off the array position would read the wrong dropdown.
   var classes = []
-  if (class1 && level1 > 0) classes.push({ name: class1, level: level1 })
-  if (class2 && level2 > 0) classes.push({ name: class2, level: level2 })
+  if (class1 && level1 > 0) classes.push({ name: class1, level: level1, slot: 1 })
+  if (class2 && level2 > 0) classes.push({ name: class2, level: level2, slot: 2 })
 
   var slots = [0,0,0,0,0,0,0,0,0]
   var cantrips = null
@@ -166,7 +405,7 @@ function updateSpellsAvailable()
 
   if (classes.length === 1) {
     slots = singleClassSlots(classes[0].name, classes[0].level)
-    cantrips = knownValue(classes[0].name, classes[0].level, "Cantrips Known")
+    cantrips = cantripsForClass(classes[0])
     known = knownValue(classes[0].name, classes[0].level, "Spells Known")
     prepared = preparedValue(classes[0].name, classes[0].level)
   } else if (classes.length === 2) {
@@ -174,7 +413,7 @@ function updateSpellsAvailable()
     var hasEffective = false
 
     var accumulators = [
-      { field: "cantrips", lookup: function(c) { return knownValue(c.name, c.level, "Cantrips Known") } },
+      { field: "cantrips", lookup: function(c) { return cantripsForClass(c) } },
       { field: "known", lookup: function(c) { return knownValue(c.name, c.level, "Spells Known") } },
       { field: "prepared", lookup: function(c) { return preparedValue(c.name, c.level) } }
     ]
@@ -219,14 +458,234 @@ function updateSpellsAvailable()
   for (var i = 0; i < 9; i++) {
     $("[name='spellslotsmax" + (i + 1) + "']").val(slots[i] === 0 ? "" : slots[i])
   }
+
+  // Spell list rows, split per class (PHB p.164: spells known/prepared are
+  // tracked separately per class) — cantrip rows for each class first, then
+  // subclass bonus (always-prepared) rows, then spell rows, so a Cleric
+  // 9/Druid 2 shows which prepared spells come from being a Cleric vs. a
+  // Druid, plus any domain/oath/circle spells automatically filled in.
+  var groups = []
+  classes.forEach(function(c) {
+    var cantripVal = cantripsForClass(c)
+    groups.push({ key: "c" + c.slot, kind: "spell-row-cantrip", className: c.name, count: cantripVal === null ? 0 : cantripVal })
+  })
+  classes.forEach(function(c) {
+    var bonusNames = subclassBonusSpells(c.name, subclassChoiceForSlot(c.slot), c.level)
+    if (bonusNames.length > 0) {
+      groups.push({ key: "b" + c.slot, kind: "spell-row-bonus", className: c.name, count: bonusNames.length, rows: bonusNames.map(bonusSpellRowData) })
+    }
+  })
+  classes.forEach(function(c) {
+    var knownVal = knownValue(c.name, c.level, "Spells Known")
+    var preparedVal = preparedValue(c.name, c.level)
+    var count = (knownVal === null ? 0 : knownVal) + (preparedVal === null ? 0 : preparedVal)
+    // Prepared casters (Cleric/Druid/Paladin/Wizard): a spell occupying one
+    // of these rows is by definition one of the day's prepared spells —
+    // there's no independent choice to track, so Prepared is forced
+    // checked+disabled, same as subclass bonus rows. Known casters (Bard/
+    // Ranger/Sorcerer/Warlock) don't have a "prepare from your list"
+    // mechanic — they just know a fixed spell — so this stays interactive
+    // (and unchecked by default) for them, as before.
+    groups.push({ key: "s" + c.slot, kind: "spell-row-spell", className: c.name, count: count, defaultPrepChecked: c.name in PREPARED_CASTER_ABILITY })
+  })
+  syncSpellListRows(groups)
 }
 
-$("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wisdomscore'], [name='Charismascore'], [name='Intelligencescore']").bind('input change', function() {
+$("[name='class1'], [name='level1'], [name='class2'], [name='level2'], [name='Wisdomscore'], [name='Charismascore'], [name='Intelligencescore'], [name='subclass1'], [name='subclass2']").bind('input change', function() {
   updateProficiencyBonus()
   updateSpellsAvailable()
 })
 
 loadClassesData()
+
+// ---- Spell list (Cantrips Known rows + Spells Known/Prepared rows) ----
+// Row count is derived live from Spells Available, not user-managed. PHB
+// multiclass rule: each class's spells known/prepared are tracked
+// separately (p.164), so Spells Known + Spells Prepared is the correct
+// total — they're never both non-null for the same class.
+
+function buildSpellDatalist()
+{
+  var datalist = document.getElementById('spellnames-datalist')
+  if (!datalist || typeof obj === 'undefined' || !obj.spells) return
+  var names = obj.spells.map(function(s) { return s.Name }).sort()
+  datalist.innerHTML = names.map(function(n) {
+    return "<option value='" + n.replace(/'/g, "&#39;") + "'></option>"
+  }).join("")
+}
+buildSpellDatalist()
+
+function collectSpellRowData(groupKey)
+{
+  var rows = []
+  $("#spelltable tr.spell-group-" + groupKey).each(function() {
+    var $tr = $(this)
+    rows.push({
+      prep: $tr.find("input[name^='spellprep']").prop("checked"),
+      name: $tr.find("input[name^='spellname']").val(),
+      level: $tr.find("input[name^='spelllevel']").val(),
+      attacksave: $tr.find("input[name^='spellattacksave']").val(),
+      time: $tr.find("input[name^='spelltime']").val(),
+      range: $tr.find("input[name^='spellrange']").val(),
+      duration: $tr.find("input[name^='spellduration']").val()
+    })
+  })
+  return rows
+}
+
+function escapeAttr(value)
+{
+  // & first, or the escaping of " below would itself be re-escaped. Without
+  // the & pass, typing "&amp;" into a field and then triggering a rebuild
+  // silently turns it into "&".
+  return String(value == null ? "" : value).replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+}
+
+// className is structural (which class this row's spell slot belongs to,
+// set from the class/level fields) rather than spell data, so it's readonly
+// and untouched by the spellnames-datalist autofill below. Bonus rows
+// (subclass-granted spells) are fully system-derived, so their spell fields
+// are locked too, and Prepared is forced checked+disabled — PHB: "you
+// always have it prepared... doesn't count against the number of spells
+// you can prepare each day."
+// fieldsLocked: name/level/time/range/duration readonly (bonus rows only —
+// fully derived, not searched). prepLocked: Prepared forced checked+disabled
+// — bonus rows, and prepared-caster classes' regular rows (occupying the
+// row already means it's prepared; there's no independent choice to track).
+function buildSpellRow(id, rowClasses, className, data, fieldsLocked, prepLocked)
+{
+  data = data || {}
+  var ro = fieldsLocked ? " readonly" : ""
+  var checked = prepLocked ? true : data.prep
+  var tr = document.createElement("tr")
+  tr.className = rowClasses
+  tr.innerHTML =
+    "<td><input name='spellprep" + id + "' type='checkbox'" + (checked ? " checked" : "") + (prepLocked ? " disabled" : "") + " /></td>" +
+    "<td><input name='spellname" + id + "' type='text' list='spellnames-datalist' value=\"" + escapeAttr(data.name) + "\"" + ro + " /></td>" +
+    "<td><input name='spelllevel" + id + "' type='text' value=\"" + escapeAttr(data.level) + "\"" + ro + " /></td>" +
+    "<td><input name='spellclass" + id + "' type='text' value=\"" + escapeAttr(className) + "\" readonly /></td>" +
+    "<td><input name='spellattacksave" + id + "' type='text' value=\"" + escapeAttr(data.attacksave) + "\" /></td>" +
+    "<td><input name='spelltime" + id + "' type='text' value=\"" + escapeAttr(data.time) + "\"" + ro + " /></td>" +
+    "<td><input name='spellrange" + id + "' type='text' value=\"" + escapeAttr(data.range) + "\"" + ro + " /></td>" +
+    "<td><input name='spellduration" + id + "' type='text' value=\"" + escapeAttr(data.duration) + "\"" + ro + " /></td>"
+  return tr
+}
+
+// groupKey -> { className, rows } for every group rendered so far this
+// character. Rows are kept even while their group is absent from the current
+// layout. That matters because the class/level fields pass through states that
+// derive to nothing while being edited — clearing Level to retype it drops
+// every group — and rebuilding straight from the DOM would throw the whole
+// spell list away, which the debounced cloud autosave would then persist.
+// The cache is also intentionally longer than what's rendered: dropping from
+// level 5 to 3 hides rows rather than deleting them, so going back restores
+// them.
+var spellRowCache = {}
+var lastSpellGroupsSignature = null
+
+// Called when a different character is loaded — its rows have nothing to do
+// with the outgoing one's.
+function resetSpellList()
+{
+  spellRowCache = {}
+  lastSpellGroupsSignature = null
+}
+
+// Fold whatever is on screen back into the cache before it's replaced, so
+// edits made since the last rebuild survive.
+function captureRenderedSpellRows()
+{
+  var keys = {}
+  $("#spelltable tr").each(function() {
+    var match = /spell-group-([A-Za-z0-9]+)/.exec(this.className || "")
+    if (match) keys[match[1]] = true
+  })
+  Object.keys(keys).forEach(function(key) {
+    var entry = spellRowCache[key]
+    if (!entry) return
+    var rows = collectSpellRowData(key)
+    // Overlay rather than replace, so cached rows beyond the rendered count
+    // aren't truncated away.
+    for (var i = 0; i < rows.length; i++) entry.rows[i] = rows[i]
+  })
+}
+
+// groups: [{ key, kind, className, count, rows? }, ...] in display order.
+// kind drives the row color; key scopes cached data to that specific
+// (slot, row-type) group. Groups with a precomputed `rows` array (subclass
+// bonus spells) are fully derived, so they're rebuilt fresh every time.
+function rebuildSpellList(groups)
+{
+  captureRenderedSpellRows()
+
+  var tbody = document.getElementById("spelltable")
+  tbody.innerHTML = ""
+  var id = 0
+  groups.forEach(function(g) {
+    var data
+    if (g.rows) {
+      // Bonus rows are derived, so they're regenerated each time — except for
+      // an unresolved one, which is editable and whose typed-in details would
+      // otherwise be wiped by the next unrelated level/ability edit.
+      var priorBonus = spellRowCache[g.key]
+      var reuse = (priorBonus && priorBonus.className === g.className) ? priorBonus.rows : []
+      data = g.rows.map(function(row, i) {
+        var prev = reuse[i]
+        if (!row.unresolved || !prev || prev.name !== row.name) return row
+        return { prep: true, name: row.name, level: prev.level, attacksave: prev.attacksave,
+                 time: prev.time, range: prev.range, duration: prev.duration, unresolved: true }
+      })
+      spellRowCache[g.key] = { className: g.className, rows: data.slice() }
+    } else {
+      // A group key (e.g. "s1") belongs to whichever class occupies that sheet
+      // slot. If the class itself changed (not just its level or ability
+      // scores), the cached rows describe a different class's spell list and
+      // must not carry over.
+      var cached = spellRowCache[g.key]
+      data = (cached && cached.className === g.className) ? cached.rows : []
+      spellRowCache[g.key] = { className: g.className, rows: data }
+    }
+    var isBonus = g.kind === "spell-row-bonus"
+    // Cantrips don't require daily preparation for any class — they're
+    // simply always known/castable — so they're locked checked the same
+    // way prepared-caster spells and subclass bonus spells are.
+    var prepLocked = isBonus || g.defaultPrepChecked || g.kind === "spell-row-cantrip"
+    for (var i = 0; i < g.count; i++) {
+      var row = data[i]
+      // A bonus spell with no data/spells.js match has nothing prefilled, so
+      // it stays editable instead of being locked blank.
+      var fieldsLocked = isBonus && !(row && row.unresolved)
+      tbody.appendChild(buildSpellRow(id++, g.kind + " spell-group-" + g.key, g.className, row, fieldsLocked, prepLocked))
+    }
+  })
+}
+
+function syncSpellListRows(groups)
+{
+  // Precomputed rows (subclass bonus spells) can change without count or
+  // className changing (e.g. switching domain at the same level), so their
+  // spell names are folded into the signature too.
+  var signature = groups.map(function(g) {
+    var rowsPart = g.rows ? g.rows.map(function(r) { return r.name }).join(",") : ""
+    return g.key + ":" + g.className + ":" + g.count + ":" + rowsPart
+  }).join("|")
+  if (signature === lastSpellGroupsSignature) return
+  lastSpellGroupsSignature = signature
+  rebuildSpellList(groups)
+}
+
+// Autofill Level/Cast Time/Range/Duration from data/spells.js when a row's
+// spell name matches. Attack/Save has no equivalent field in that dataset,
+// so it stays manual. Delegated since rows are rebuilt dynamically.
+$("#spelltable").on("input", "input[list='spellnames-datalist']", function() {
+  var spell = lookupSpell(this.value)
+  if (!spell) return
+  var id = this.name.replace("spellname", "")
+  $("[name='spelllevel" + id + "']").val(spell["Level"])
+  $("[name='spelltime" + id + "']").val(spell["Casting Time"])
+  $("[name='spellrange" + id + "']").val(spell["Range"])
+  $("[name='spellduration" + id + "']").val(spell["Duration"])
+})
 
 function totalhd_clicked()
 {
@@ -237,7 +696,6 @@ function totalhd_clicked()
 var rows_attacks = 2;
 var rows_inventory = 2;
 var rows_attunements = 3;
-var rows_spells = 2;
 
 // Builds a plain object of every named form field (used by both the local
 // file export and cloud sync, so the on-disk and Firestore formats stay identical).
@@ -292,12 +750,49 @@ function migrateLegacyClassLevelFields(savedData)
   }
 }
 
+// Legacy saves (and the "Wizard 5" migration above) hold free-text class names,
+// but class1/class2 are <select>s now. Normalize to a canonical option; if the
+// value isn't a known class, keep it as a one-off option rather than letting
+// the select silently discard it.
+function normalizeSavedClassFields(savedData)
+{
+  ["class1", "class2"].forEach(function(name) {
+    if (!(name in savedData)) return
+    var resolved = resolveClassName(savedData[name])
+    if (resolved) savedData[name] = resolved
+    else ensureClassOption(document.getElementById(name), savedData[name])
+  })
+}
+
 // Applies a previously-serialized character object (see serializeCharacterForm)
 // back onto the form, adjusting dynamic table row counts first. Used by both
 // the local file import and cloud sync.
+//
+// Returns a promise resolving to true when the character was applied, false
+// when it was refused. Spell list rows are derived from data/classes.json, so
+// applying a character before that fetch lands would build zero rows and drop
+// the saved spell list on the floor — which autosave would then persist. Wait
+// for the fetch, and refuse outright if it failed.
 function applyCharacterData(savedData)
 {
+  if (!classesData && classesDataReady) {
+    return classesDataReady.then(function() { return applyCharacterDataNow(savedData) })
+  }
+  return Promise.resolve(applyCharacterDataNow(savedData))
+}
+
+function applyCharacterDataNow(savedData)
+{
+  if (!classesData) {
+    alert("Class data (data/classes.json) could not be loaded, so the spell list can't be rebuilt.\n\n" +
+          "This character was NOT opened — opening it now would discard its spells. Reload the page and try again.")
+    return false
+  }
+
   migrateLegacyClassLevelFields(savedData)
+  normalizeSavedClassFields(savedData)
+  // Nothing cached belongs to the incoming character.
+  resetSpellList()
 
   while (rows_attacks > parseInt(savedData.rows_attacks)) {
     remove_last_row('attacktable');
@@ -320,12 +815,25 @@ function applyCharacterData(savedData)
     add_inventory();
   }
 
-  while (rows_spells > parseInt(savedData.rows_spells)) {
-    remove_last_row('spelltable');
-  }
-  while (rows_spells < parseInt(savedData.rows_spells)) {
-    add_spell();
-  }
+  // Spell list rows are derived from class/level + ability scores (see
+  // syncSpellListRows), not a stored count. Restore those fields first so
+  // the row count and cantrip/prepared split are correct before the spell
+  // row data itself is applied below.
+  ["class1", "level1", "class2", "level2", "Strengthscore", "Dexterityscore", "Constitutionscore", "Intelligencescore", "Wisdomscore", "Charismascore"].forEach(function(name) {
+    if (name in savedData) $("[name='" + name + "']").val(savedData[name])
+  })
+  updateSpellsAvailable();
+
+  // subclass1/subclass2's <option> lists only exist once updateSpellsAvailable()
+  // has run once for the restored class, so the saved choice has to be
+  // applied after that — then recomputed once more to pick up any subclass
+  // bonus spell rows. Saves that predate subclass support have no such key;
+  // those must reset to blank, not inherit the previously-loaded character's
+  // domain/oath/circle and its always-prepared rows.
+  ["subclass1", "subclass2"].forEach(function(name) {
+    $("[name='" + name + "']").val(name in savedData ? savedData[name] : "")
+  })
+  updateSpellsAvailable()
 
   const formId = "charsheet";
   let form = document.querySelector(`#${formId}`);
@@ -334,9 +842,19 @@ function applyCharacterData(savedData)
   for (const element of formElements) {
     if (element.name in savedData) {
       if (element.type == 'checkbox') {
+        // A disabled checkbox (cantrip/prepared-caster/bonus spell rows)
+        // has its checked state fully derived by updateSpellsAvailable()
+        // above, not stored — skip it so stale saved data (e.g. from
+        // before this row was locked) can't overwrite it.
+        if (element.disabled) continue
         var checked = (savedData[element.name] == 'checked');
         $("[name='" + element.name + "']").prop("checked", checked)
       } else {
+        // Readonly fields inside the spell table (the Class column, and every
+        // field of a resolved subclass bonus row) are derived by
+        // updateSpellsAvailable() above. Letting stale saved values land on
+        // them would leave a wrong value the user can't edit back out.
+        if (element.readOnly && element.closest('#spelltable')) continue
         element.value = savedData[element.name];
       }
     }
@@ -344,6 +862,7 @@ function applyCharacterData(savedData)
 
   updateProficiencyBonus();
   updateSpellsAvailable();
+  return true;
 }
 window.applyCharacterData = applyCharacterData;
 
@@ -390,7 +909,14 @@ function load_character(e) {
   var reader = new FileReader();
   reader.onload = function(e) {
     var contents = e.target.result;
-    var savedData = JSON.parse(contents);
+    var savedData;
+    try {
+      savedData = JSON.parse(contents);
+    } catch (err) {
+      console.error('Could not parse character file:', err);
+      alert("That file isn't a valid character save.");
+      return;
+    }
     applyCharacterData(savedData);
   };
   reader.readAsText(file);
@@ -416,17 +942,6 @@ function long_rest()
   $("[name='remaininghd']").val($("[name='totalhd']").val())
   $("[name='bonusmaxhp']").val($("[name='maxhp']").val())
   $("[name='pactslots1']").val($("[name='pactslotsmax1']").val())
-
-  $("[name='spellbox1']").prop("checked", false);
-  $("[name='spellbox2']").prop("checked", false);
-  $("[name='spellbox3']").prop("checked", false);
-  $("[name='spellbox4']").prop("checked", false);
-  $("[name='spellbox5']").prop("checked", false);
-  $("[name='spellbox6']").prop("checked", false);
-  $("[name='spellbox7']").prop("checked", false);
-  $("[name='spellbox8']").prop("checked", false);
-  $("[name='spellbox9']").prop("checked", false);
-  $("[name='spellbox10']").prop("checked", false);
 
   $("[name='deathsuccess1']").prop("checked", false);
   $("[name='deathsuccess2']").prop("checked", false);
@@ -457,34 +972,6 @@ function add_attack()
 
   rows_attacks += 1;
   $("[name='rows_attacks']").val(rows_attacks);
-}
-
-function add_spell()
-{
-  var tableRef = document.getElementById('spelltable')
-
-  var row = tableRef.insertRow(tableRef.rows.length)
-
-  var cell0 = row.insertCell(0);
-  var cell1 = row.insertCell(1);
-  var cell2 = row.insertCell(2);
-  var cell3 = row.insertCell(3);
-  var cell4 = row.insertCell(4);
-  var cell5 = row.insertCell(5);
-  var cell6 = row.insertCell(6);
-  var cell7 = row.insertCell(7);
-
-  cell0.innerHTML = "<td><input name='spellprep" + rows_spells + "' type='checkbox' /></td>";
-  cell1.innerHTML = "<td><input name='spellname" + rows_spells + "' type='text' /></td>";
-  cell2.innerHTML = "<td><input name='spelllevel" + rows_spells + "' type='text' /></td>";
-  cell3.innerHTML = "<td><input name='spellsource" + rows_spells + "' type='text' /></td>";
-  cell4.innerHTML = "<td><input name='spellattacksave" + rows_spells + "' type='text' /></td>";
-  cell5.innerHTML = "<td><input name='spelltime" + rows_spells + "' type='text' /></td>";
-  cell6.innerHTML = "<td><input name='spellrange" + rows_spells + "' type='text' /></td>";
-  cell7.innerHTML = "<td><input name='spellduration" + rows_spells + "' type='text' /></td>";
-
-  rows_spells += 1;
-  $("[name='rows_spells']").val(rows_spells);
 }
 
 function add_inventory()
@@ -550,17 +1037,10 @@ function remove_last_row(tableId)
         rows_inventory = 0;
       }
       break;
-    case 'spelltable':
-      rows_spells -= 1;
-      if (rows_spells < 0) {
-        rows_spells = 0;
-      }
-      break;
   }
   $("[name='rows_attacks']").val(rows_attacks);
   $("[name='rows_attunements']").val(rows_attunements);
   $("[name='rows_inventory']").val(rows_inventory);
-  $("[name='rows_spells']").val(rows_spells);
 }
 
 function calc_carry_weight()
