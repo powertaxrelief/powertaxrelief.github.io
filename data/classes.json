@@ -1710,6 +1710,58 @@
                     ]
                 }
             },
+            "Circle of Spores": {
+                "Circle of Spores Spells": {
+                    "table": {
+                        "Druid Level": [
+                            "2nd",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "chill touch",
+                            "blindness/deafness, gentle repose",
+                            "animate dead, gaseous form",
+                            "blight, confusion",
+                            "cloudkill, contagion"
+                        ]
+                    }
+                }
+            },
+            "Circle of the Stars": {
+                "Circle of the Stars Spells": {
+                    "table": {
+                        "Druid Level": [
+                            "2nd"
+                        ],
+                        "Spells": [
+                            "guidance, guiding bolt"
+                        ]
+                    }
+                }
+            },
+            "Circle of Wildfire": {
+                "Circle of Wildfire Spells": {
+                    "table": {
+                        "Druid Level": [
+                            "2nd",
+                            "3rd",
+                            "5th",
+                            "7th",
+                            "9th"
+                        ],
+                        "Spells": [
+                            "burning hands, cure wounds",
+                            "flaming sphere, scorching ray",
+                            "plant growth, revivify",
+                            "aura of life, fire shield",
+                            "flame strike, mass cure wounds"
+                        ]
+                    }
+                }
+            },
             "Sacred Plants and Wood": {
                 "content": [
                     "A druid holds certain plants to be sacred, particularly alder, ash, birch, elder, hazel, holly, juniper, mistletoe, oak, rowan, willow, and yew. Druids often use such plants as part of a spellcasting focus, incorporating lengths of oak or yew or sprigs of mistletoe.",

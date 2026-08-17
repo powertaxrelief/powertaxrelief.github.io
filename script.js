@@ -150,16 +150,29 @@ function singleClassSlots(className, level)
 
 // ---- Subclass-granted bonus spells (always prepared, don't count against
 // Spells Known/Prepared) ----
-// Only classes/subclasses with a PHB spell table already in classes.json:
-// Cleric Divine Domain (58-63), Paladin Sacred Oath (86-92), Druid Circle
-// of the Land (68-69, by terrain). Warlock patrons don't grant automatic
-// spells in the core PHB (that's a Xanathar's-only mechanic), so Warlock
-// is intentionally not included.
+// Core PHB: Cleric Divine Domain (58-63), Paladin Sacred Oath (86-92),
+// Druid Circle of the Land (68-69, by terrain). Tasha's Cauldron of
+// Everything (2014-compatible expansion, not the 2024 PHB): Druid Circle
+// of Spores/Stars/Wildfire. Warlock patrons don't grant automatic spells
+// in the core PHB (that's a separate Xanathar's-only mechanic), so
+// Warlock is intentionally not included.
 var SUBCLASS_CHOICES = {
   Cleric: ["Knowledge", "Life", "Light", "Nature", "Tempest", "Trickery", "War"],
   Paladin: ["Devotion", "the Ancients", "Vengeance"],
-  Druid: ["Arctic", "Coast", "Desert", "Forest", "Grassland", "Mountain", "Swamp"]
+  Druid: [
+    { value: "Land:Arctic", label: "Land (Arctic)" },
+    { value: "Land:Coast", label: "Land (Coast)" },
+    { value: "Land:Desert", label: "Land (Desert)" },
+    { value: "Land:Forest", label: "Land (Forest)" },
+    { value: "Land:Grassland", label: "Land (Grassland)" },
+    { value: "Land:Mountain", label: "Land (Mountain)" },
+    { value: "Land:Swamp", label: "Land (Swamp)" },
+    { value: "Spores", label: "Spores" },
+    { value: "Stars", label: "Stars" },
+    { value: "Wildfire", label: "Wildfire" }
+  ]
 }
+var DRUID_CIRCLE_KEYS = { Spores: "Circle of Spores", Stars: "Circle of the Stars", Wildfire: "Circle of Wildfire" }
 
 function updateSubclassOptions()
 {
@@ -176,15 +189,18 @@ function updateSubclassOptions()
     }
     if (select.data("builtFor") !== entry.className) {
       var current = select.val()
+      var values = choices.map(function(c) { return typeof c === "string" ? c : c.value })
       var options = "<option value=''>-- select --</option>" + choices.map(function(c) {
-        return "<option value='" + c + "'>" + c + "</option>"
+        var value = typeof c === "string" ? c : c.value
+        var text = typeof c === "string" ? c : c.label
+        return "<option value='" + value + "'>" + text + "</option>"
       }).join("")
       select.html(options)
       select.data("builtFor", entry.className)
-      select.val(current && choices.indexOf(current) !== -1 ? current : "")
+      select.val(current && values.indexOf(current) !== -1 ? current : "")
       var labelText = entry.className === "Cleric" ? "Divine Domain"
         : entry.className === "Paladin" ? "Sacred Oath"
-        : "Circle of the Land Terrain"
+        : "Druid Circle"
       label.text((entry.slot === 2 ? "Multiclass " : "") + labelText)
     }
     wrap.css("display", "")
@@ -207,9 +223,15 @@ function subclassSpellTable(className, choice)
     return (o && o["Oath Spells"] && o["Oath Spells"][oathKey + " Spells"] && o["Oath Spells"][oathKey + " Spells"].table) || null
   }
   if (className === "Druid") {
-    var land = classesData.Druid && classesData.Druid["Class Features"]["Circle of the Land"]
-    var c = land && land["Circle Spells"] && land["Circle Spells"][choice]
-    return (c && c.table) || null
+    if (choice.indexOf("Land:") === 0) {
+      var terrain = choice.slice(5)
+      var land = classesData.Druid && classesData.Druid["Class Features"]["Circle of the Land"]
+      var c = land && land["Circle Spells"] && land["Circle Spells"][terrain]
+      return (c && c.table) || null
+    }
+    var circleKey = DRUID_CIRCLE_KEYS[choice]
+    var circle = circleKey && classesData.Druid && classesData.Druid["Class Features"][circleKey]
+    return (circle && circle[circleKey + " Spells"] && circle[circleKey + " Spells"].table) || null
   }
   return null
 }
